@@ -13,6 +13,7 @@ namespace Reverbat
         public void OnSoundHit(bool reflected)
         {
             if (response == SoundResponse.Bell) level.HitBell(reflected);
+            if (response == SoundResponse.HiddenMechanism && reflected) level.HitCoffinByReflection();
         }
 
         public void OnEchoReturned()

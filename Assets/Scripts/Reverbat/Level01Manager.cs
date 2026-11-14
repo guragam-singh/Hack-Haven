@@ -11,13 +11,15 @@ namespace Reverbat
         public GameObject artifact;
         public LineRenderer mechanism;
         public Transform reflector;
+        public EchoPulse2D darkness { get; private set; }
+        public TiltableReflector2D tiltable { get; private set; }
         public bool CoffinOpen { get; private set; }
         public bool Complete { get; private set; }
         public bool MechanismDiscovered { get; private set; }
         public bool MechanismVisible => mechanism.enabled;
         private float revealUntil;
         private float hintUntil;
-        private string hint = "Select Echo Sight, then click the coffin to listen for its hidden mechanism.";
+        private string hint = "Only the coffin is visible. Use Echo Pulse to discover the dark room.";
         private GUIStyle text, title, small, button;
 
         private void Awake()
@@ -25,6 +27,10 @@ namespace Reverbat
             artifact.SetActive(false);
             mechanism.enabled = false;
             hintUntil = float.PositiveInfinity;
+            tiltable = reflector.gameObject.AddComponent<TiltableReflector2D>();
+            tiltable.level = this;
+            darkness = gameObject.AddComponent<EchoPulse2D>();
+            darkness.Initialize(this);
         }
 
         private void Update()
@@ -44,7 +50,7 @@ namespace Reverbat
             MechanismDiscovered = true;
             mechanism.enabled = true;
             revealUntil = Time.time + 3;
-            ShowHint("The bell controls the coffin lock.", 3);
+            if (!CoffinOpen) ShowHint("The bell controls the lock. From the right side of the room, echo the plank's right half.", 5);
         }
 
         public void HitBell(bool throughReflector)
@@ -55,6 +61,13 @@ namespace Reverbat
                 ShowHint("No useful response. The bell needs an echo redirected by the cyan reflector.");
                 return;
             }
+            StartCoroutine(FlashBell());
+            ShowHint("Bell activated! The echo is travelling to the coffin.");
+        }
+
+        public void HitCoffinByReflection()
+        {
+            if (CoffinOpen) return;
             CoffinOpen = true;
             coffin.color = new Color(.55f, .22f, .25f);
             coffin.GetComponent<Collider2D>().enabled = false;
@@ -92,20 +105,26 @@ namespace Reverbat
             GUI.matrix = Matrix4x4.Scale(new Vector3(Screen.width / 1280f, Screen.height / 720f, 1));
             GUI.Box(new Rect(0, 0, 1280, 100), GUIContent.none);
             GUI.Label(new Rect(20, 7, 1240, 34), "REVERBAT  /  LEVEL 01 — THE CRYPT                         Artifacts: " + (Complete ? "1/1" : "0/1"), title);
-            GUI.Label(new Rect(25, 42, 1230, 52), Complete || Time.time < hintUntil ? hint : "Bounce an echo off the cyan reflector into the bell.", text);
-            LabelWorld(bat.transform, "BAT", new Vector2(0, 28));
-            LabelWorld(reflector, "REFLECTOR / 45°", new Vector2(0, 68));
-            LabelWorld(bell.transform, "BELL", new Vector2(0, -48));
+            GUI.Label(new Rect(25, 42, 1230, 52), Complete || Time.time < hintUntil ? hint : "Pulse to reveal. Move right, then Echo Sight the plank's right half: plank → bell → coffin.", text);
+            if (darkness.Visible(bat.GetComponent<SpriteRenderer>())) LabelWorld(bat.transform, "BAT", new Vector2(0, 28));
+            if (darkness.Visible(reflector.GetComponent<SpriteRenderer>()))
+            {
+                LabelWorld(reflector, "REFLECTOR / " + tiltable.Angle.ToString("0") + "°", new Vector2(0, 68));
+                LabelWorld(reflector, "LEFT: no response   |   RIGHT: bell → coffin", new Vector2(0, 95));
+            }
+            if (darkness.Visible(bell)) LabelWorld(bell.transform, "BELL", new Vector2(0, -48));
             LabelWorld(coffin.transform, CoffinOpen ? "COFFIN / OPEN" : "COFFIN / LOCKED", new Vector2(0, -85));
             GUI.Box(new Rect(0, 620, 1280, 100), GUIContent.none);
-            GUI.backgroundColor = !bat.EchoSelected ? new Color(.65f, .55f, 1) : Color.white;
-            if (GUI.Button(new Rect(65, 635, 220, 43), "Move", button)) bat.SelectEcho(false);
+            GUI.backgroundColor = !bat.EchoSelected && !bat.PulseSelected ? new Color(.65f, .55f, 1) : Color.white;
+            if (GUI.Button(new Rect(20, 635, 180, 43), "Move", button)) bat.SelectEcho(false);
             GUI.backgroundColor = bat.EchoSelected ? Color.cyan : Color.white;
-            if (GUI.Button(new Rect(300, 635, 270, 43), "Echo Sight", button)) bat.SelectEcho(true);
+            if (GUI.Button(new Rect(210, 635, 210, 43), "Echo Sight", button)) bat.SelectEcho(true);
+            GUI.backgroundColor = bat.PulseSelected ? Color.cyan : Color.white;
+            if (GUI.Button(new Rect(430, 635, 210, 43), "Echo Pulse", button)) bat.SelectPulse();
             GUI.backgroundColor = Color.white;
             GUI.enabled = false;
-            GUI.Button(new Rect(585, 635, 300, 43), Complete ? "Resonance / Unlocked" : "Resonance / Locked", button);
-            GUI.Button(new Rect(900, 635, 260, 43), "Mimicry / Locked", button);
+            GUI.Button(new Rect(650, 635, 310, 43), Complete ? "Resonance / Unlocked" : "Resonance / Locked", button);
+            GUI.Button(new Rect(970, 635, 290, 43), "Mimicry / Locked", button);
             GUI.enabled = true;
             GUI.Label(new Rect(40, 681, 1200, 28), "Mouse only  •  Move: click a clear location  •  Echo Sight: click to aim and emit  •  Artifact: click to collect", small);
             if (Complete)

@@ -14,6 +14,7 @@ namespace Reverbat
         public Vector2 roomMin = new Vector2(-8.45f, -3.55f);
         public Vector2 roomMax = new Vector2(8.45f, 3.65f);
         public bool EchoSelected { get; private set; }
+        public bool PulseSelected { get; private set; }
         public bool IsMoving { get; private set; }
         public Vector2 Destination { get; private set; }
         private bool collectOnArrival;
@@ -60,25 +61,38 @@ namespace Reverbat
 
         public void SelectEcho(bool selected)
         {
+            PulseSelected = false;
             EchoSelected = selected;
             level.ShowHint(selected ? "Echo Sight: click a target or location to emit sound." : "Move: click a clear location. Click the red artifact to collect it.");
         }
 
+        public void SelectPulse()
+        {
+            PulseSelected = true;
+            EchoSelected = false;
+            level.darkness.Emit();
+            level.ShowHint("Echo Pulse reveals the room. Move to the right side, then echo the plank's right half.", 6);
+        }
+
+        public void StopMoving() { IsMoving = false; waypoints.Clear(); }
+
         public void ClickWorld(Vector2 point)
         {
             if (level.Complete) return;
+            level.tiltable.Leave();
             // Artifact clicks always mean walk over and collect, regardless of selected mode.
             if (level.CoffinOpen && !level.Complete && Vector2.Distance(point, level.artifact.transform.position) < .7f)
             {
                 MoveTo(level.artifact.transform.position, true);
                 return;
             }
+            if (PulseSelected) { level.darkness.Emit(); return; }
             if (EchoSelected)
             {
                 IsMoving = false;
                 echo.Emit(point);
             }
-            else MoveTo(point, false);
+            else if (!level.tiltable.TryBoard(point)) MoveTo(point, false);
         }
 
         public void MoveTo(Vector2 target, bool collect)

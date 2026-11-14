@@ -11,10 +11,10 @@ namespace Reverbat
         public LineRenderer returning;
         public float cooldown = .7f;
         public float pulseSpeed = 18;
-        public int maxReflections = 3;
         public bool IsEmitting { get; private set; }
         public int LastReflectionCount { get; private set; }
         public string LastHit { get; private set; }
+        public bool LastScriptedRoute { get; private set; }
         private float readyAt;
 
         private struct Contact
@@ -35,20 +35,42 @@ namespace Reverbat
             var contacts = new List<Contact>();
             LastReflectionCount = 0;
             LastHit = "None";
-            // Normal surfaces finish the outgoing trace; return travels back over its segments.
-            for (int bounce = 0; bounce <= maxReflections; bounce++)
+            LastScriptedRoute = false;
+            RaycastHit2D hit = Physics2D.Raycast(origin, direction, 30);
+            var plankCollider = level.reflector.GetComponent<Collider2D>();
+            Vector2 closest = plankCollider.ClosestPoint(target);
+            bool aimedAtPlank = Vector2.Distance(closest, target) <= .25f;
+            // Small click forgiveness around the thin plank. Deliberate left-half clicks stay left
+            // even when a ray from the right would enter the plank through its right edge first.
+            bool plankHit = aimedAtPlank || hit.collider == plankCollider;
+            if (plankHit)
             {
-                RaycastHit2D hit = Physics2D.Raycast(origin, direction, 30);
-                if (hit.collider == null) { points.Add(origin + direction * 20); break; }
-                points.Add(hit.point);
-                var surface = hit.collider.GetComponent<SoundInteractable>();
-                LastHit = hit.collider.name;
-                contacts.Add(new Contact { surface = surface, reflected = LastReflectionCount > 0 });
-                if (surface == null || surface.response != SoundResponse.Reflector || bounce == maxReflections) break;
-                LastReflectionCount++;
-                direction = Vector2.Reflect(direction, hit.normal).normalized;
-                origin = hit.point + direction * .035f;
+                Vector2 impact = aimedAtPlank ? closest : hit.point;
+                points.Add(impact);
+                contacts.Add(new Contact { surface = plankCollider.GetComponent<SoundInteractable>() });
+                LastHit = plankCollider.name;
+                bool batOnRight = level.bat.roomCamera.WorldToViewportPoint(origin).x > .5f;
+                bool rightHalf = (aimedAtPlank ? target.x : impact.x) > level.reflector.position.x;
+                if (batOnRight && rightHalf)
+                {
+                    // Puzzle rule, independent of angle: plank -> bell -> coffin.
+                    LastScriptedRoute = true;
+                    LastReflectionCount = 1;
+                    points.Add(level.bell.transform.position);
+                    points.Add(level.coffin.transform.position);
+                    contacts.Add(new Contact { surface = level.bell.GetComponent<SoundInteractable>(), reflected = true });
+                    contacts.Add(new Contact { surface = level.coffin.GetComponent<SoundInteractable>(), reflected = true });
+                    LastHit = level.coffin.name;
+                }
+                else level.ShowHint("Move to the right side of the room, then echo the plank's right half.");
             }
+            else if (hit.collider != null)
+            {
+                points.Add(hit.point);
+                LastHit = hit.collider.name;
+                contacts.Add(new Contact { surface = hit.collider.GetComponent<SoundInteractable>() });
+            }
+            else points.Add(origin + direction * 20);
             StartCoroutine(PlayPulse(points, contacts));
             return true;
         }
@@ -66,7 +88,7 @@ namespace Reverbat
             }
             var reversed = new List<Vector3>(points);
             reversed.Reverse();
-            // A scripted retrace makes the received echo unmistakable; forward hits are real raycasts.
+            // Retrace the outgoing path to show the echo returning to its source.
             // Follow the bat's current position if another input moved it during the pulse.
             reversed[reversed.Count - 1] = transform.position;
             returning.enabled = true;
@@ -78,7 +100,7 @@ namespace Reverbat
                 contact.surface.OnEchoReturned();
                 if (contact.surface.response == SoundResponse.HiddenMechanism || contact.surface.response == SoundResponse.Bell) useful = true;
             }
-            if (!useful) level.ShowHint(LastReflectionCount > 0 ? "Sound redirects along the reflector's angle." : "No useful response");
+            if (!useful && LastHit != "Reflector") level.ShowHint("No useful response");
             yield return new WaitForSeconds(.18f);
             outgoing.enabled = returning.enabled = false;
             IsEmitting = false;
