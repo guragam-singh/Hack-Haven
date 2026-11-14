@@ -20,7 +20,7 @@ namespace Reverbat
 
         private void OnGUI()
         {
-            if (tutorial == null || level == null) return;
+            if (StartingCutscene.IsActive || tutorial == null || level == null) return;
             Matrix4x4 previousMatrix = GUI.matrix;
             Color previousColor = GUI.color;
             int previousDepth = GUI.depth;

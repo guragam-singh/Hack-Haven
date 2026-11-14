@@ -39,7 +39,7 @@ namespace Reverbat
         private int dismissedFrame = -1;
         private bool beginPending;
         public bool AwaitingFirstClick { get; private set; } = true;
-        public bool BlocksGameplayInput => AwaitingFirstClick || dismissedFrame == Time.frameCount;
+        public bool BlocksGameplayInput => StartingCutscene.IsActive || AwaitingFirstClick || dismissedFrame == Time.frameCount;
         public bool ShowAbilityBarGuide => !AwaitingFirstClick && CurrentTriggerId == DialogueIds.LevelBegin;
         public bool ShowArtifactGuide => !AwaitingFirstClick && level != null && level.CoffinOpen && !level.Complete && level.artifact.activeSelf;
         public string CurrentMessage => hintActive ? sittingHint : currentIndex < 0 ? string.Empty : entries[currentIndex].text;
@@ -59,7 +59,7 @@ namespace Reverbat
 
         public bool DismissControls()
         {
-            if (!AwaitingFirstClick) return false;
+            if (StartingCutscene.IsActive || !AwaitingFirstClick) return false;
             AwaitingFirstClick = false;
             dismissedFrame = Time.frameCount;
             beginPending = true;
@@ -89,6 +89,7 @@ namespace Reverbat
 
         private void Update()
         {
+            if (StartingCutscene.IsActive) return;
             if (level == null) return;
             if (AwaitingFirstClick)
             {

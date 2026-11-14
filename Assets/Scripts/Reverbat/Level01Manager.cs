@@ -45,6 +45,7 @@ namespace Reverbat
             tutorial = GetComponent<TutorialManager>();
             if (tutorial == null) tutorial = gameObject.AddComponent<TutorialManager>();
             tutorial.Initialize(this);
+            if (StartingCutscene.Requested) gameObject.AddComponent<StartingCutscene>();
         }
 
         public void BeginLevel()
@@ -123,7 +124,7 @@ namespace Reverbat
 
         private void OnGUI()
         {
-            if (tutorial != null && tutorial.AwaitingFirstClick) return;
+            if (StartingCutscene.IsActive || (tutorial != null && tutorial.AwaitingFirstClick)) return;
             if (text == null)
             {
                 text = new GUIStyle(GUI.skin.label) { fontSize = 19, alignment = TextAnchor.MiddleCenter, wordWrap = true };

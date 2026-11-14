@@ -23,7 +23,7 @@ namespace Reverbat
 
         private void Awake() { AudioListener.volume = Mathf.Clamp01(PlayerPrefs.GetFloat(VolumeKey, 1)); }
         private void OnApplicationFocus(bool focused) { if (!focused) pressedButton = -1; }
-        public void Play() { SceneManager.LoadScene("Level01_Prototype", LoadSceneMode.Single); }
+        public void Play() { StartingCutscene.Requested = true; SceneManager.LoadScene("Level01_Prototype", LoadSceneMode.Single); }
         public void OpenSettings() { pressedButton = -1; SettingsOpen = true; }
         public void Back() { SettingsOpen = false; }
         public void SetMasterVolume(float value)
