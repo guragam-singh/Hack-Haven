@@ -148,6 +148,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 268a87268b8e6e2439b167043ed05808, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::Reverbat.MainMenu
+  background: {fileID: 2800000, guid: f74d062e1b7c15d4b9bd228be3fe50b5, type: 3}
 --- !u!4 &1199745368
 Transform:
   m_ObjectHideFlags: 0
