@@ -7,6 +7,7 @@ namespace Reverbat
     {
         public event System.Action<string> DialogueTriggered;
         public DialogueManager dialogue { get; private set; }
+        public TutorialManager tutorial { get; private set; }
         public BatController2D bat;
         public SpriteRenderer coffin;
         public SpriteRenderer bell;
@@ -21,9 +22,12 @@ namespace Reverbat
         public bool MechanismVisible => mechanism.enabled;
         private float revealUntil;
         private float hintUntil;
-        private string hint = "Only the coffin is visible. Use Echo Pulse to discover the dark room.";
-        private GUIStyle text, title, small, button;
+        private string hint = "";
+        private GUIStyle text, title, counter, small, button, instruction;
+        public static Rect EchoSightButtonRect => new Rect(20, 635, 290, 43);
+        public static Rect EchoPulseButtonRect => new Rect(330, 635, 290, 43);
         private Color bellBaseColor;
+        private bool levelBegun;
 
         private void Awake()
         {
@@ -38,13 +42,22 @@ namespace Reverbat
             darkness.Initialize(this);
             dialogue = gameObject.AddComponent<DialogueManager>();
             dialogue.Initialize(this);
+            tutorial = GetComponent<TutorialManager>();
+            if (tutorial == null) tutorial = gameObject.AddComponent<TutorialManager>();
+            tutorial.Initialize(this);
         }
 
-        private void Start() { NotifyDialogue(DialogueIds.LevelBegin); }
+        public void BeginLevel()
+        {
+            if (levelBegun) return;
+            levelBegun = true;
+            NotifyDialogue(DialogueIds.LevelBegin);
+        }
         public void NotifyDialogue(string triggerId) { DialogueTriggered?.Invoke(triggerId); }
 
         private void Update()
         {
+            if (tutorial != null && tutorial.BlocksGameplayInput) return;
             if (mechanism.enabled && Time.time >= revealUntil) mechanism.enabled = false;
             if (Vector2.Distance(bat.transform.position, reflector.GetComponent<Collider2D>().ClosestPoint(bat.transform.position)) <= 1.5f)
                 NotifyDialogue(DialogueIds.Reflector);
@@ -110,18 +123,23 @@ namespace Reverbat
 
         private void OnGUI()
         {
+            if (tutorial != null && tutorial.AwaitingFirstClick) return;
             if (text == null)
             {
                 text = new GUIStyle(GUI.skin.label) { fontSize = 19, alignment = TextAnchor.MiddleCenter, wordWrap = true };
                 text.normal.textColor = Color.white;
-                title = new GUIStyle(text) { fontSize = 23, fontStyle = FontStyle.Bold };
+                instruction = new GUIStyle(text) { fontSize = TutorialPresentation.MainInstructionFontSize, fontStyle = FontStyle.Bold };
+                title = new GUIStyle(text) { fontSize = 19, fontStyle = FontStyle.Bold, alignment = TextAnchor.MiddleLeft };
+                counter = new GUIStyle(text) { fontSize = 18, alignment = TextAnchor.MiddleRight };
                 small = new GUIStyle(text) { fontSize = 15 };
                 button = new GUIStyle(GUI.skin.button) { fontSize = 17 };
             }
             GUI.matrix = Matrix4x4.Scale(new Vector3(Screen.width / 1280f, Screen.height / 720f, 1));
             GUI.Box(new Rect(0, 0, 1280, 100), GUIContent.none);
-            GUI.Label(new Rect(20, 7, 1240, 34), "REVERBAT  /  LEVEL 01 — THE CRYPT                         Artifacts: " + (Complete ? "1/1" : "0/1"), title);
-            GUI.Label(new Rect(25, 42, 1230, 52), Complete || Time.time < hintUntil ? hint : "Touch down on the mirror's right half to tilt it. Then echo that half from the room's right side.", text);
+            GUI.Label(new Rect(24, 7, 800, 30), "REVERBAT / LEVEL 01", title);
+            GUI.Label(new Rect(1000, 7, 256, 30), "Artifacts: " + (Complete ? "1/1" : "0/1"), counter);
+            // Tutorial labels never consume input. Legacy action feedback cannot overwrite milestones.
+            TutorialPresentation.DrawReadableText(new Rect(24, 41, 1232, 50), tutorial != null ? tutorial.CurrentMessage : Time.time < hintUntil ? hint : "", instruction);
             if (darkness.Visible(bat.GetComponent<SpriteRenderer>())) LabelWorld(bat.transform, "BAT", new Vector2(0, 28));
             if (darkness.Visible(reflector.GetComponent<SpriteRenderer>()))
             {
@@ -131,12 +149,14 @@ namespace Reverbat
             if (darkness.Visible(bell)) LabelWorld(bell.transform, "BELL", new Vector2(0, -48));
             LabelWorld(coffin.transform, CoffinOpen ? "COFFIN / OPEN" : "COFFIN / LOCKED", new Vector2(0, -85));
             GUI.Box(new Rect(0, 620, 1280, 100), GUIContent.none);
+            bool inputEnabled = tutorial == null || !tutorial.BlocksGameplayInput;
+            GUI.enabled = inputEnabled;
             GUI.backgroundColor = bat.EchoSelected ? Color.cyan : Color.white;
-            if (GUI.Button(new Rect(20, 635, 290, 43), "1  Echo Sight", button)) bat.SelectAbility(0);
+            if (GUI.Button(EchoSightButtonRect, "1  Echo Sight", button)) bat.SelectAbility(0);
             GUI.backgroundColor = bat.PulseSelected ? Color.cyan : Color.white;
-            if (GUI.Button(new Rect(330, 635, 290, 43), "2  Echo Pulse", button)) bat.SelectAbility(1);
+            if (GUI.Button(EchoPulseButtonRect, "2  Echo Pulse", button)) bat.SelectAbility(1);
             GUI.backgroundColor = bat.SelectedAbility == 2 ? Color.cyan : Color.white;
-            GUI.enabled = bat.IsAbilityUnlocked(2);
+            GUI.enabled = inputEnabled && bat.IsAbilityUnlocked(2);
             if (GUI.Button(new Rect(640, 635, 300, 43), Complete ? "3  Resonance / Unlocked" : "3  Resonance / Locked", button)) bat.SelectAbility(2);
             GUI.backgroundColor = Color.white;
             GUI.enabled = false;
@@ -145,12 +165,6 @@ namespace Reverbat
             var art = GetComponent<Level01ArtPresentation>();
             if (art != null) art.DrawAbilityIcons();
             GUI.Label(new Rect(40, 681, 1200, 28), "WASD: fly  •  1–3 or toolbar: select ability  •  Left click: use ability  •  Approach artifact with WASD, then click to collect", small);
-            if (Complete)
-            {
-                GUI.Box(new Rect(400, 265, 480, 125), GUIContent.none);
-                GUI.Label(new Rect(410, 280, 460, 40), "Level 1 Complete", title);
-                GUI.Label(new Rect(410, 326, 460, 48), hint, text);
-            }
         }
 
         private void LabelWorld(Transform obj, string label, Vector2 offset)

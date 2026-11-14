@@ -12,7 +12,7 @@ namespace Reverbat
         public float radius = .25f;
         public Vector2 roomMin = new Vector2(-8.45f, -3.55f);
         public Vector2 roomMax = new Vector2(8.45f, 3.65f);
-        public int SelectedAbility { get; private set; }
+        public int SelectedAbility { get; private set; } = -1;
         public bool EchoSelected => SelectedAbility == 0;
         public bool PulseSelected => SelectedAbility == 1;
         public bool IsMoving { get; private set; }
@@ -22,6 +22,7 @@ namespace Reverbat
 
         private void OnGUI()
         {
+            if (level.tutorial != null && level.tutorial.BlocksGameplayInput) { guiHeld.Clear(); return; }
             var e = Event.current;
             if (e.type != EventType.KeyDown && e.type != EventType.KeyUp) return;
             if (e.type == EventType.KeyUp) { guiHeld.Remove(e.keyCode); return; }
@@ -34,6 +35,7 @@ namespace Reverbat
 
         private void Update()
         {
+            if (level.tutorial != null && level.tutorial.BlocksGameplayInput) { IsMoving = false; guiHeld.Clear(); return; }
             var keyboard = Keyboard.current;
             Vector2 movement = Vector2.zero;
             if (keyboard != null)
@@ -57,7 +59,7 @@ namespace Reverbat
         public void ApplyMovement(Vector2 input, float deltaTime)
         {
             IsMoving = false;
-            if (level.Complete || input.sqrMagnitude < .001f) return;
+            if (level.Complete || (level.tutorial != null && level.tutorial.BlocksGameplayInput) || input.sqrMagnitude < .001f) return;
             level.tiltable.Leave();
             Vector2 delta = Vector2.ClampMagnitude(input, 1) * speed * deltaTime;
             float step = delta.magnitude;
@@ -72,7 +74,11 @@ namespace Reverbat
 
         public bool HandleScreenClick(Vector2 screen)
         {
-            if (level.dialogue != null && level.dialogue.BlocksGameplayPointer(screen)) return false;
+            if (level.tutorial != null && level.tutorial.BlocksGameplayInput)
+            {
+                level.tutorial.DismissControls();
+                return false;
+            }
             float hudY = (Screen.height - screen.y) * 720f / Screen.height;
             if (hudY <= 100 || hudY >= 620 || level.Complete) return false;
             ClickWorld(roomCamera.ScreenToWorldPoint(screen));
@@ -82,6 +88,7 @@ namespace Reverbat
         public bool IsAbilityUnlocked(int index) => index == 0 || index == 1 || (index == 2 && level.Complete);
         public bool SelectAbility(int index)
         {
+            if (level.tutorial != null && level.tutorial.BlocksGameplayInput) return false;
             if (!IsAbilityUnlocked(index)) return false;
             SelectedAbility = index;
             level.ShowHint(index == 0 ? "Echo Sight: aim and click. WASD moves the bat." : "Echo Pulse selected: click to reveal. WASD moves the bat.");
@@ -93,7 +100,7 @@ namespace Reverbat
 
         public void ClickWorld(Vector2 point)
         {
-            if (level.Complete) return;
+            if (level.Complete || (level.tutorial != null && level.tutorial.BlocksGameplayInput)) return;
             if (level.CoffinOpen && Vector2.Distance(point, level.artifact.transform.position) < .7f)
             {
                 if (!level.TryCollect(transform.position)) level.ShowHint("Use WASD to get closer, then click the artifact.");

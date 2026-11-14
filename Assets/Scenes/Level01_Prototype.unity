@@ -1994,6 +1994,8 @@ GameObject:
   - component: {fileID: 1943762520}
   - component: {fileID: 1943762522}
   - component: {fileID: 1943762523}
+  - component: {fileID: 1943762524}
+  - component: {fileID: 1943762525}
   m_Layer: 0
   m_Name: Level01_Prototype
   m_TagString: Untagged
@@ -2082,6 +2084,49 @@ MonoBehaviour:
   revealFeather: 1.4
   fadeOutDuration: 0.8
   revealMaterial: {fileID: 2100000, guid: c42398a13da74124e90a8211b06b8bfb, type: 2}
+--- !u!114 &1943762524
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1943762519}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 835280ed12d836b4b8339adb1b89a329, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::Reverbat.TutorialManager
+  entries:
+  - triggerId: level01.begin
+    text: Only the coffin is visible. Use Echolocation to reveal the room.
+  - triggerId: level01.first-pulse
+    text: Find a way to open the coffin.
+  - triggerId: level01.reflector-tilted
+    text: Maybe combine Echo Sight with reflection?
+  - triggerId: level01.coffin-open
+    text: Collect the blood artifact!
+  - triggerId: level01.artifact-collected
+    text: Level 1 Complete!
+  hintDelay: 10
+  hintDuration: 5
+  sittingHint: Maybe try sitting down for a bit...
+--- !u!114 &1943762525
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1943762519}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: d0ce6a86662774a4192f6d7990fb2ebf, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::Reverbat.TutorialPresentation
+  keyW: {fileID: 2800000, guid: d7c467319f84bf14cb808efdb608c29b, type: 3}
+  keyA: {fileID: 2800000, guid: f9818b14ad6df6645a6118b1e7779a1e, type: 3}
+  keyS: {fileID: 2800000, guid: 726322d81cfc14841b2269e414de472c, type: 3}
+  keyD: {fileID: 2800000, guid: 4d313c4a3916c6347bb154c369183126, type: 3}
+  mouseIcon: {fileID: 2800000, guid: 076ec0134a678a840910be92c9981012, type: 3}
 --- !u!1 &2076517914
 GameObject:
   m_ObjectHideFlags: 0

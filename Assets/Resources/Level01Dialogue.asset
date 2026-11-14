@@ -16,35 +16,20 @@ MonoBehaviour:
   - triggerId: level01.begin
     characterName: BAT DRACULA
     text: Great. He gets the castle, the throne, and the entire kingdom... and I get wings the size of teaspoons.
-    voiceClip: {fileID: 0}
-    duration: 5
+    voiceClip: {fileID: 8300000, guid: b4b1995c1db02ce4794d3c9c257642c2, type: 3}
+    duration: 8.5
   - triggerId: level01.first-pulse
     characterName: BAT DRACULA
     text: Wonderful. I've lost my body AND my eyesight. What's next, taxes?
-    voiceClip: {fileID: 0}
-    duration: 5
-  - triggerId: level01.reflector-discovered
-    characterName: BAT DRACULA
-    text: A perfectly good mirror, and not a reflection of me in sight. Typical.
-    voiceClip: {fileID: 0}
-    duration: 5
+    voiceClip: {fileID: 8300000, guid: 54d72d5d010bb8245b7e557d77bb6b82, type: 3}
+    duration: 5.5
   - triggerId: level01.reflector-tilted
     characterName: BAT DRACULA
     text: Behold! The terrifying power of... sitting on things.
-    voiceClip: {fileID: 0}
-    duration: 5
-  - triggerId: level01.coffin-open
-    characterName: BAT DRACULA
-    text: HA! Still the greatest mind in Transylvania. Technically half of it, but still.
-    voiceClip: {fileID: 0}
-    duration: 5
+    voiceClip: {fileID: 8300000, guid: 0c2b1d50b445870468db4a62a8724525, type: 3}
+    duration: 6
   - triggerId: level01.artifact-collected
     characterName: BAT DRACULA
     text: Finally, some of my power back. Now, where's that oversized impostor?
-    voiceClip: {fileID: 0}
-    duration: 5
-  - triggerId: level01.dictator-announcement
-    characterName: DICTATOR DRACULA
-    text: Attention, citizens. Reports of a flying rodent impersonating your glorious ruler are entirely false.
-    voiceClip: {fileID: 0}
-    duration: 5
+    voiceClip: {fileID: 8300000, guid: 28390dec97e26764ba11761809e56d8b, type: 3}
+    duration: 6.5

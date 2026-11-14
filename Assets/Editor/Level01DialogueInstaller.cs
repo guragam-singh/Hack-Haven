@@ -9,25 +9,30 @@ public static class Level01DialogueInstaller
     public static void Install()
     {
         const string path = "Assets/Resources/Level01Dialogue.asset";
-        if (AssetDatabase.LoadAssetAtPath<DialogueLibrary>(path) != null) return;
         Directory.CreateDirectory("Assets/Resources");
         AssetDatabase.Refresh();
-        var library = ScriptableObject.CreateInstance<DialogueLibrary>();
+        var clips = new AudioClip[4];
+        for (int i = 0; i < clips.Length; i++)
+        {
+            clips[i] = AssetDatabase.LoadAssetAtPath<AudioClip>("Assets/Audio/Level01/L1 0" + (i + 1) + ".wav");
+            if (clips[i] == null) { Debug.LogError("[REVERBAT] Import all four L1 audio recordings before installing."); return; }
+        }
+        var library = AssetDatabase.LoadAssetAtPath<DialogueLibrary>(path);
+        bool create = library == null;
+        if (create) library = ScriptableObject.CreateInstance<DialogueLibrary>();
         library.entries = new[] {
-            Entry(DialogueIds.LevelBegin, "BAT DRACULA", "Great. He gets the castle, the throne, and the entire kingdom... and I get wings the size of teaspoons."),
-            Entry(DialogueIds.FirstPulse, "BAT DRACULA", "Wonderful. I've lost my body AND my eyesight. What's next, taxes?"),
-            Entry(DialogueIds.Reflector, "BAT DRACULA", "A perfectly good mirror, and not a reflection of me in sight. Typical."),
-            Entry(DialogueIds.Tilt, "BAT DRACULA", "Behold! The terrifying power of... sitting on things."),
-            Entry(DialogueIds.Coffin, "BAT DRACULA", "HA! Still the greatest mind in Transylvania. Technically half of it, but still."),
-            Entry(DialogueIds.Artifact, "BAT DRACULA", "Finally, some of my power back. Now, where's that oversized impostor?"),
-            Entry(DialogueIds.Announcement, "DICTATOR DRACULA", "Attention, citizens. Reports of a flying rodent impersonating your glorious ruler are entirely false.")
+            Entry(DialogueIds.LevelBegin, "Great. He gets the castle, the throne, and the entire kingdom... and I get wings the size of teaspoons.", clips[0]),
+            Entry(DialogueIds.FirstPulse, "Wonderful. I've lost my body AND my eyesight. What's next, taxes?", clips[1]),
+            Entry(DialogueIds.Tilt, "Behold! The terrifying power of... sitting on things.", clips[2]),
+            Entry(DialogueIds.Artifact, "Finally, some of my power back. Now, where's that oversized impostor?", clips[3])
         };
-        AssetDatabase.CreateAsset(library, path);
+        if (create) AssetDatabase.CreateAsset(library, path);
+        else EditorUtility.SetDirty(library);
         AssetDatabase.SaveAssets();
-        Debug.Log("[REVERBAT] Created editable Level01Dialogue asset with seven voice-ready entries.");
+        Debug.Log("[REVERBAT] Installed four original Level 1 recordings; removed unused dialogue entries.");
     }
-    private static DialogueEntry Entry(string id, string speaker, string text)
+    private static DialogueEntry Entry(string id, string text, AudioClip clip)
     {
-        return new DialogueEntry { triggerId = id, characterName = speaker, text = text, duration = 5 };
+        return new DialogueEntry { triggerId = id, characterName = "BAT DRACULA", text = text, voiceClip = clip, duration = clip.length };
     }
 }
