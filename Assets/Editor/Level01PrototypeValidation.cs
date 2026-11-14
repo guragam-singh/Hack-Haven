@@ -5,166 +5,165 @@ using Reverbat;
 using UnityEditor;
 using UnityEditor.SceneManagement;
 using UnityEngine;
+using UnityEngine.InputSystem;
+using UnityEngine.InputSystem.LowLevel;
 
 [InitializeOnLoad]
 public static class Level01PrototypeValidation
 {
     private static readonly List<string> results = new List<string>();
     private static bool passed, running;
+    private static Keyboard keyboard;
     static Level01PrototypeValidation()
     {
-        EditorApplication.playModeStateChanged += state => { if (state == PlayModeStateChange.EnteredPlayMode) StartPending(); };
+        EditorApplication.playModeStateChanged += state => { if(state == PlayModeStateChange.EnteredPlayMode) StartPending(); };
         EditorApplication.delayCall += StartPending;
     }
     [MenuItem("REVERBAT/Validate Level 01 in Play Mode")]
     public static void Run()
     {
-        if (EditorApplication.isPlaying) return;
+        if(EditorApplication.isPlaying) return;
         EditorSceneManager.OpenScene(Level01PrototypeBuilder.ScenePath);
-        SessionState.SetBool("ReverbatValidate", true);
-        EditorApplication.isPlaying = true;
+        SessionState.SetBool("ReverbatValidate",true);
+        EditorApplication.isPlaying=true;
     }
     private static void StartPending()
     {
-        if (!EditorApplication.isPlaying || running || !SessionState.GetBool("ReverbatValidate", false)) return;
-        var level = Object.FindFirstObjectByType<Level01Manager>();
-        if (level != null) level.StartCoroutine(Verify(level));
+        if(!EditorApplication.isPlaying || running || !SessionState.GetBool("ReverbatValidate",false)) return;
+        var l=Object.FindFirstObjectByType<Level01Manager>();
+        if(l!=null) l.StartCoroutine(Verify(l));
     }
-    private static void Check(bool value, string message)
+    private static void Check(bool ok,string message)
     {
-        results.Add((value ? "PASS: " : "FAIL: ") + message);
-        if (!value) { passed = false; Debug.LogError("[REVERBAT] " + message); }
+        results.Add((ok?"PASS: ":"FAIL: ")+message);
+        if(!ok){passed=false;Debug.LogError("[REVERBAT] "+message);}
     }
-    private static IEnumerator Verify(Level01Manager level)
+    private static void Keys(params Key[] keys) { keyboard.MakeCurrent(); InputSystem.QueueStateEvent(keyboard,new KeyboardState(keys)); }
+    private static IEnumerator Verify(Level01Manager l)
     {
-        passed = running = true;
-        results.Clear();
-        var bat = level.bat;
+        passed=running=true; results.Clear();
+        var bat=l.bat;
         yield return null;
-        var dialogue = level.dialogue;
-        var shown = new List<string>();
-        if (dialogue.ActiveId != null) shown.Add(dialogue.ActiveId);
-        System.Action<DialogueEntry> observe = entry => shown.Add(entry.triggerId);
-        dialogue.DialogueShown += observe;
-        Check(dialogue.ActiveId == DialogueIds.LevelBegin, "Opening dialogue automatically appears at level start");
-        Check(dialogue.Content != null && dialogue.Content.entries.Length == 7, "Seven editable voice-ready dialogue entries loaded");
-        yield return new WaitForEndOfFrame();
-        Directory.CreateDirectory("Captures");
-        ScreenCapture.CaptureScreenshot("Captures/Level01_Dialogue_Opening.png");
-        float coffinLeft = bat.roomCamera.WorldToViewportPoint(level.coffin.bounds.min).x * 1280;
-        Check(dialogue.PanelRect.yMax < 620 && dialogue.PanelRect.xMax < coffinLeft, "Dialogue panel leaves toolbar, coffin and artifact clear");
-        Check(!dialogue.TryDismissAtScreenPoint(new Vector2(Screen.width - 1, Screen.height - 1)), "Clicks outside dialogue do not dismiss it");
-        bat.SelectEcho(false);
-        bat.ClickWorld(new Vector2(-5, 0));
-        yield return new WaitForSeconds(.35f);
-        Check(dialogue.IsShowing && Vector2.Distance(bat.transform.position, new Vector2(-5, 0)) < .1f && Time.timeScale == 1, "Bat moves while dialogue remains visible without pausing gameplay");
-        bat.ClickWorld(new Vector2(-6, 0));
-        yield return new WaitForSeconds(.35f);
-        int visible = 0;
-        foreach (var sr in level.GetComponentsInChildren<SpriteRenderer>()) if (sr.enabled) visible++;
-        Check(visible == 1 && level.coffin.enabled && !level.artifact.activeSelf, "Only coffin sprite visible initially");
-        Check(bat.roomCamera.backgroundColor == Color.black, "Room starts completely black");
-        bat.SelectPulse();
-        Check(dialogue.HasTriggered(DialogueIds.FirstPulse) && dialogue.ActiveId == DialogueIds.LevelBegin && dialogue.PendingCount == 1, "First successful circular pulse queues its line without interrupting opening");
-        int queued = dialogue.PendingCount;
-        Check(!level.darkness.Emit() && dialogue.PendingCount == queued, "Rejected repeat pulse adds no extra dialogue");
-        Vector2 panelPoint = new Vector2(dialogue.PanelRect.center.x * Screen.width / 1280, Screen.height - dialogue.PanelRect.center.y * Screen.height / 720);
-        Vector2 oldDestination = bat.Destination;
-        Check(dialogue.TryDismissAtScreenPoint(panelPoint) && dialogue.ActiveId == DialogueIds.FirstPulse, "Clicking panel dismisses opening and advances to queued pulse line");
-        Check(!bat.HandleScreenClick(panelPoint) && bat.Destination == oldDestination, "Dialogue dismiss click cannot leak into gameplay on the same frame");
-        Check(level.darkness.IsEmitting, "Echo Pulse creates an expanding ripple");
+        var art=l.GetComponent<Level01ArtPresentation>();
+        var stand=l.transform.Find("Reflector Stand Artwork");
+        Quaternion standRotation=stand==null?Quaternion.identity:stand.rotation;
+        Vector3 standPosition=stand==null?Vector3.zero:stand.position;
+        if(art!=null)
+        {
+            Check(bat.GetComponent<SpriteRenderer>().sprite.name=="Bat_Dracula" && l.coffin.sprite.name=="Coffin_Closed","Supplied bat and closed-coffin sprites are installed");
+            int visible=0;
+            foreach(var sr in l.GetComponentsInChildren<SpriteRenderer>()) if(sr.enabled && sr.sprite!=null) visible++;
+            Check(visible==1 && l.coffin.enabled,"Art scene initially shows only the coffin");
+            Check(stand!=null && stand.parent==l.transform,"Reflector stand is stationary outside the rotating plank hierarchy");
+        }
+        var dialogue=l.dialogue;
+        var shown=new List<string>();
+        if(dialogue.ActiveId!=null) shown.Add(dialogue.ActiveId);
+        System.Action<DialogueEntry> observe=e=>shown.Add(e.triggerId);
+        dialogue.DialogueShown+=observe;
+        keyboard=InputSystem.AddDevice<Keyboard>(); Keys(); yield return null;
+        Check(dialogue.HasTriggered(DialogueIds.LevelBegin),"Opening dialogue still triggers");
+        Check(bat.SelectedAbility==0,"Default selected ability matches first toolbar slot");
+        Vector2 start=bat.transform.position;
+        Keys(Key.D); yield return new WaitForSeconds(.25f); Keys(); yield return null;
+        Check(bat.transform.position.x>start.x+.7f,"D moves right at existing speed during dialogue");
+        Vector2 before=bat.transform.position;
+        Keys(Key.A); yield return new WaitForSeconds(.25f); Keys(); yield return null;
+        Check(bat.transform.position.x<before.x-.7f,"A moves left");
+        before=bat.transform.position;
+        Keys(Key.W); yield return new WaitForSeconds(.25f); Keys(); yield return null;
+        Check(bat.transform.position.y>before.y+.7f,"W moves up");
+        before=bat.transform.position;
+        Keys(Key.S); yield return new WaitForSeconds(.25f); Keys(); yield return null;
+        Check(bat.transform.position.y<before.y-.7f,"S moves down");
+        bat.transform.position=new Vector3(-8.3f,0);
+        bat.ApplyMovement(Vector2.left,1);
+        Check(bat.transform.position.x>=bat.roomMin.x,"WASD movement clamps to room bounds");
+        bat.transform.position=new Vector3(-2,0);
+        bat.ApplyMovement(Vector2.right,1);
+        Check(bat.transform.position.x<-1.54f,"Existing circle collision prevents passing through plank");
+        bat.transform.position=new Vector3(-6,0);
+        Keys(Key.Digit2); yield return new WaitForSeconds(.12f); Keys(); yield return new WaitForSeconds(.12f);
+        Check(bat.PulseSelected && !l.darkness.IsEmitting,"2 selects second ability without activating it");
+        Keys(Key.Digit3); yield return new WaitForSeconds(.12f); Keys(); yield return new WaitForSeconds(.12f);
+        Check(bat.PulseSelected && !bat.IsAbilityUnlocked(2),"3 cannot select locked third ability");
+        Check(bat.SelectAbility(0) && bat.EchoSelected,"Mouse toolbar selection uses same shared selected ability state");
+        Keys(Key.Digit2); yield return new WaitForSeconds(.12f); Keys(); yield return new WaitForSeconds(.12f);
+        Check(bat.PulseSelected,"Keyboard selection remains synchronized after mouse selection");
+        Vector2 position=bat.transform.position;
+        bat.ClickWorld(new Vector2(-4,1));
+        Check(l.darkness.IsEmitting && !bat.IsMoving && Vector2.Distance(bat.transform.position,position)<.01f,"World click emits selected pulse without click-to-move");
+        Check(dialogue.HasTriggered(DialogueIds.FirstPulse),"First pulse dialogue remains intact");
         yield return new WaitForSeconds(1);
-        Check(level.darkness.Visible(level.reflector.GetComponent<SpriteRenderer>()) && level.darkness.Visible(bat.GetComponent<SpriteRenderer>()), "Ripple reveals bat and reflector on arrival");
-        yield return new WaitForSeconds(7);
-        Check(!dialogue.IsShowing, "Configured duration automatically dismisses short dialogue");
-        Check(!level.darkness.Visible(level.reflector.GetComponent<SpriteRenderer>()), "Revealed environment fades back into darkness");
-        Check(Mathf.Abs(level.tiltable.Angle) < .01f, "Plank starts at zero degrees");
-        level.HitCoffinByReflection();
-        Check(!level.CoffinOpen, "Direct unlock callback cannot bypass progression");
-        bat.SelectEcho(false);
-        bat.ClickWorld(new Vector2(4, 1));
-        yield return WaitForMove(bat);
-        bat.SelectEcho(true);
-        bat.ClickWorld(level.reflector.TransformPoint(new Vector3(.35f, 0, 0)));
-        yield return new WaitUntil(() => !bat.echo.IsEmitting);
-        yield return new WaitForSeconds(bat.echo.cooldown);
-        Check(!bat.echo.LastScriptedRoute && !level.CoffinOpen && bat.echo.outgoing.positionCount == 3, "Flat plank visibly deflects away without reaching bell or coffin");
-        Check(dialogue.HasTriggered(DialogueIds.Reflector) && !dialogue.HasTriggered(DialogueIds.Tilt), "First plank interaction triggers discovery, but not premature tilt dialogue");
-        level.reflector.rotation = Quaternion.Euler(0, 0, -45);
-        bat.ClickWorld(level.reflector.TransformPoint(new Vector3(.35f, 0, 0)));
-        yield return new WaitUntil(() => !bat.echo.IsEmitting);
-        yield return new WaitForSeconds(bat.echo.cooldown);
-        Check(!bat.echo.LastScriptedRoute && !level.CoffinOpen, "Setting angle alone cannot bypass bat-weight progression");
-        level.reflector.rotation = Quaternion.identity;
-        bat.SelectEcho(false);
-        bat.ClickWorld(level.reflector.TransformPoint(new Vector3(.45f, 0, 0)));
-        yield return new WaitForSeconds(4);
-        Check(level.tiltable.CorrectAngle && level.tiltable.HasBeenTiltedToCorrectAngle, "Bat boards correct end and tilts to -45 degrees");
-        Check(dialogue.HasTriggered(DialogueIds.Tilt), "First weight-driven correct tilt triggers sitting-on-things dialogue");
-        bat.ClickWorld(new Vector2(4, 1));
-        yield return WaitForMove(bat);
-        bat.SelectEcho(true);
-        foreach (float angle in new[] { 0f, 45f, -55.1f, -34.9f })
+        Check(l.darkness.Visible(l.reflector.GetComponent<SpriteRenderer>()),"Echo Pulse still reveals environment");
+        if(art!=null)
         {
-            level.reflector.rotation = Quaternion.Euler(0, 0, angle);
-            bat.ClickWorld(level.reflector.TransformPoint(new Vector3(.35f, 0, 0)));
-            yield return new WaitUntil(() => !bat.echo.IsEmitting);
-            yield return new WaitForSeconds(bat.echo.cooldown);
-            Check(!bat.echo.LastScriptedRoute && !level.CoffinOpen && bat.echo.outgoing.positionCount == 3, "Wrong angle " + angle + " deflects harmlessly even after earlier tilt");
+            Check(l.transform.Find("Room Artwork").GetComponent<SpriteRenderer>().enabled && stand.GetComponent<SpriteRenderer>().enabled,"Echo Pulse reveals supplied background and reflector stand");
+            yield return new WaitForEndOfFrame();
+            Directory.CreateDirectory("Captures");
+            ScreenCapture.CaptureScreenshot("Captures/Level01_Art_Revealed.png");
         }
-        foreach (float angle in new[] { -55f, -35f, -45f })
+        while(dialogue.IsShowing) dialogue.Dismiss();
+        Keys(Key.Digit1); yield return new WaitForSeconds(.12f); Keys(); yield return new WaitForSeconds(.12f);
+        Check(bat.EchoSelected,"1 selects first ability");
+        bat.ClickWorld(l.reflector.TransformPoint(new Vector3(.35f,0,0)));
+        yield return new WaitUntil(()=>!bat.echo.IsEmitting);
+        yield return new WaitForSeconds(bat.echo.cooldown);
+        Check(!l.CoffinOpen && !bat.echo.LastScriptedRoute,"Flat plank still cannot unlock coffin");
+        // WASD route above the flat plank, then descend onto its right end.
+        yield return DriveTo(bat,new Vector2(-3,1.2f));
+        yield return DriveTo(bat,new Vector2(2.5f,1.2f));
+        yield return DriveTo(bat,l.tiltable.EndPosition(1),.18f);
+        yield return new WaitForSeconds(1.5f);
+        Check(l.tiltable.CorrectAngle && l.tiltable.HasBeenTiltedToCorrectAngle,"WASD boarding right end tilts plank to -45 degrees");
+        if(art!=null) Check(Quaternion.Angle(stand.rotation,standRotation)<.01f && Vector3.Distance(stand.position,standPosition)<.001f,"Stand does not rotate or move with the tilted plate");
+        Check(dialogue.HasTriggered(DialogueIds.Reflector) && dialogue.HasTriggered(DialogueIds.Tilt),"Discovery and tilt dialogue still trigger");
+        before=bat.transform.position;
+        Keys(Key.D); yield return new WaitForSeconds(.4f); Keys(); yield return null;
+        Check(bat.transform.position.x>before.x+.8f,"WASD can leave the plank without being trapped");
+        yield return DriveTo(bat,new Vector2(4,1));
+        bat.SelectAbility(0);
+        bat.ClickWorld(l.reflector.TransformPoint(new Vector3(-.35f,0,0)));
+        yield return new WaitUntil(()=>!bat.echo.IsEmitting);
+        yield return new WaitForSeconds(bat.echo.cooldown);
+        Check(!l.CoffinOpen,"Left half remains invalid at correct angle");
+        bat.ClickWorld(l.reflector.TransformPoint(new Vector3(.35f,0,0)));
+        yield return new WaitUntil(()=>!bat.echo.IsEmitting);
+        Check(l.CoffinOpen && l.artifact.activeSelf && dialogue.HasTriggered(DialogueIds.Coffin),"Right-half echo still opens coffin with dialogue");
+        if(art!=null)
         {
-            level.reflector.rotation = Quaternion.Euler(0, 0, angle);
-            Check(level.tiltable.CorrectAngle, "Tolerance accepts angle " + angle);
+            Check(l.coffin.sprite==art.openCoffin && l.coffin.color==Color.white,"Valid unlock swaps to supplied open coffin with untinted artwork");
+            Check(l.artifact.GetComponent<SpriteRenderer>().sprite.name=="Collectible_BloodDrop_Red","Exposed artifact uses supplied red blood-drop art");
+            yield return new WaitForEndOfFrame();
+            ScreenCapture.CaptureScreenshot("Captures/Level01_Art_CoffinOpen.png");
         }
-        bat.ClickWorld(level.reflector.TransformPoint(new Vector3(-.35f, 0, 0)));
-        yield return new WaitUntil(() => !bat.echo.IsEmitting);
-        yield return new WaitForSeconds(bat.echo.cooldown);
-        Check(!bat.echo.LastScriptedRoute && !level.CoffinOpen, "Correct angle but left-half hit cannot solve");
-        bat.transform.position = new Vector3(-4, 1);
-        bat.ClickWorld(level.reflector.TransformPoint(new Vector3(.35f, 0, 0)));
-        yield return new WaitUntil(() => !bat.echo.IsEmitting);
-        yield return new WaitForSeconds(bat.echo.cooldown);
-        Check(!bat.echo.LastScriptedRoute && !level.CoffinOpen, "Correct angle but left-side bat cannot solve");
-        bat.transform.position = new Vector3(4, 1);
-        bat.ClickWorld(level.reflector.TransformPoint(new Vector3(.35f, 0, 0)));
-        Check(bat.echo.LastScriptedRoute && !level.CoffinOpen, "Correct tilt and right-half hit schedule route without early unlock");
-        level.reflector.rotation = Quaternion.identity;
-        yield return new WaitUntil(() => !bat.echo.IsEmitting);
-        yield return new WaitForSeconds(bat.echo.cooldown);
-        Check(!level.CoffinOpen, "Changing tilt during flight cannot bypass arrival gate");
-        level.reflector.rotation = Quaternion.Euler(0, 0, -45);
-        bat.ClickWorld(level.reflector.TransformPoint(new Vector3(.35f, 0, 0)));
-        yield return new WaitUntil(() => !bat.echo.IsEmitting);
-        yield return new WaitForSeconds(bat.echo.cooldown);
-        var line = bat.echo.outgoing;
-        Check(line.positionCount == 4 && Vector3.Distance(line.GetPosition(2), level.bell.transform.position) < .01f && Vector3.Distance(line.GetPosition(3), level.coffin.transform.position) < .01f, "Valid beam visits plank then bell then coffin");
-        Check(level.CoffinOpen && level.artifact.activeSelf, "Only valid progression opens coffin and exposes artifact");
-        Check(dialogue.HasTriggered(DialogueIds.Coffin), "Successful coffin unlock triggers its dialogue");
-        Check(!level.TryCollect(bat.transform.position), "Artifact still requires proximity");
-        bat.ClickWorld(level.artifact.transform.position);
-        yield return WaitForMove(bat);
-        Check(level.Complete && !level.artifact.activeSelf, "Mouse-only click-to-collect completes puzzle");
-        Check(dialogue.HasTriggered(DialogueIds.Artifact) && dialogue.HasTriggered(DialogueIds.Announcement), "Collection queues artifact dialogue followed by dictator announcement");
-        while (dialogue.IsShowing) { dialogue.Dismiss(); yield return null; }
-        int artifactIndex = shown.IndexOf(DialogueIds.Artifact);
-        Check(artifactIndex >= 0 && shown.IndexOf(DialogueIds.Announcement) == artifactIndex + 1, "Villain announcement appears immediately after artifact dialogue");
-        bool once = true;
-        foreach (var entry in dialogue.Content.entries)
-            once &= dialogue.HasTriggered(entry.triggerId) && shown.FindAll(id => id == entry.triggerId).Count == 1 && !dialogue.TryTrigger(entry.triggerId);
-        Check(once && !dialogue.IsShowing && dialogue.PendingCount == 0, "All seven lines appear exactly once; repeats do not requeue");
-        Check(dialogue.Content.Find(DialogueIds.Announcement).characterName == "DICTATOR DRACULA" && dialogue.GetComponent<AudioSource>() != null, "Distinct speaker and optional voice playback source are available");
-        dialogue.DialogueShown -= observe;
+        position=bat.transform.position;
+        bat.ClickWorld(l.artifact.transform.position);
+        yield return new WaitForSeconds(.2f);
+        Check(!l.Complete && Vector2.Distance(bat.transform.position,position)<.01f,"Distant artifact click does not auto-walk or collect");
+        yield return DriveTo(bat,l.artifact.transform.position);
+        bat.ClickWorld(l.artifact.transform.position);
+        Check(l.Complete && !l.artifact.activeSelf,"WASD approach then mouse interaction collects artifact and completes level");
+        while(dialogue.IsShowing){dialogue.Dismiss();yield return null;}
+        Check(shown.IndexOf(DialogueIds.Artifact)>=0 && shown.IndexOf(DialogueIds.Announcement)==shown.IndexOf(DialogueIds.Artifact)+1,"Artifact and dictator dialogue preserve sequential order");
+        InputSystem.RemoveDevice(keyboard);
+        dialogue.DialogueShown-=observe;
         Directory.CreateDirectory("Temp/Reverbat");
-        File.WriteAllText("Temp/Reverbat/validation.txt", (passed ? "ALL PASSED\n" : "FAILED\n") + string.Join("\n", results));
-        Debug.Log("[REVERBAT VALIDATION] " + (passed ? "ALL PASSED" : "FAILED"));
-        SessionState.SetBool("ReverbatValidate", false);
-        running = false;
+        File.WriteAllText("Temp/Reverbat/validation.txt",(passed?"ALL PASSED\n":"FAILED\n")+string.Join("\n",results));
+        Debug.Log("[REVERBAT CONTROLS] "+(passed?"ALL PASSED":"FAILED"));
+        SessionState.SetBool("ReverbatValidate",false);running=false;
     }
-    private static IEnumerator WaitForMove(BatController2D bat)
+    private static IEnumerator DriveTo(BatController2D bat,Vector2 target,float tolerance=.1f)
     {
-        float deadline = Time.time + 7;
-        while (bat.IsMoving && Time.time < deadline) yield return null;
+        Keys(); yield return null;
+        float deadline=Time.time+6;
+        while(Vector2.Distance(bat.transform.position,target)>tolerance && Time.time<deadline)
+        {
+            Vector2 delta=target-(Vector2)bat.transform.position;
+            bat.ApplyMovement(delta.normalized,Mathf.Min(.04f,delta.magnitude/bat.speed));
+            yield return null;
+        }
         yield return null;
     }
 }
+

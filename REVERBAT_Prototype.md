@@ -1,3 +1,13 @@
+# Current controls — WASD update
+
+- WASD flies at the existing 4.5 units/second, with normalized diagonal input, existing circle collision checks and room clamps. There is no Move button or click-to-move.
+- Toolbar order: 1 Echo Sight, 2 Echo Pulse, 3 Resonance, then Mimicry. Mouse and keys share one selected-ability state and highlight. Locked abilities reject selection. Resonance remains the existing post-completion placeholder.
+- Select an ability, then aim and left-click to activate it. Merely selecting Echo Pulse does not fire it.
+- Fly onto the plank's right end with WASD and release the keys to weight/tilt it. WASD flies off again. The -45 degree / right-half / right-side puzzle gates are unchanged.
+- Approach the exposed artifact with WASD, then click it nearby to collect. A distant click never moves the bat.
+- Dialogue dismissal still blocks clicks underneath. Dialogue content, menu logic, level layout and progression are unchanged.
+
+The earlier implementation notes below describe previous control mappings where applicable.
 # REVERBAT Level 01 — forgiving echo puzzle
 
 Open Assets/Scenes/Level01_Prototype.unity and press Play. The existing scene is unchanged.
@@ -38,3 +48,10 @@ Verified: all 42 combined dialogue/puzzle Play Mode checks passed. Includes sing
 Assets/Scenes/MainMenu.unity is the first build scene. Play loads Level01_Prototype. Settings has a master-volume slider and Back; volume is saved with PlayerPrefs under Reverbat.MasterVolume and applied through AudioListener.volume. Quit Game calls Application.Quit (effective in player builds). The menu uses a centred reference layout scaled to fit the screen, with no changes to Level 1 logic or dialogue.
 
 Verified in Unity Play Mode: Settings/Back, master-volume application and persistence, first build-scene order, and Play loading Level 1 with its dialogue, flat plank and locked coffin. Menu screenshot visually inspected. Standalone build execution and quitting a standalone player were not tested.
+
+
+Controls verification: all 25 Play Mode checks passed. W/A/S/D and 1/2/3 were exercised using queued Input System keyboard events; precise puzzle navigation used the shared movement handler. Mouse-selection callbacks, world activation, collision/bounds, WASD boarding/leaving, coffin opening, nearby artifact interaction and dialogue order passed. No menu or dialogue content changes were made.
+
+
+Art update: selected Guragam PNGs are integrated into the existing scene. See ART_INTEGRATION.md for the source mapping and sprite-region details. All 32 final art/gameplay Play Mode checks passed; all original collision geometry is preserved. Unused assets and baked-interactable reference sheets were not imported.
+

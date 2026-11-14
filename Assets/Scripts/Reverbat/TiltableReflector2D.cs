@@ -12,6 +12,7 @@ namespace Reverbat
         public bool HasBeenTiltedToCorrectAngle { get; private set; }
         private int landingSide;
         private bool landed;
+        private float boardAfter;
         public Vector2 LaunchPoint => new Vector2(-1.5f, 3.214286f);
 
         private void Awake() { transform.rotation = Quaternion.identity; }
@@ -27,17 +28,28 @@ namespace Reverbat
             Vector2 local = transform.InverseTransformPoint(point);
             if (Mathf.Abs(local.x) < .25f || Mathf.Abs(local.x) > .75f || Mathf.Abs(local.y) > 5) return false;
             level.NotifyDialogue(DialogueIds.Reflector);
-            landingSide = local.x > 0 ? 1 : -1;
-            landed = false;
-            level.bat.MoveTo(EndPosition(landingSide), false);
-            level.ShowHint("Fly onto the reflector end. Your weight tilts that side down.");
+            int side = local.x > 0 ? 1 : -1;
+            if (Vector2.Distance(level.bat.transform.position, EndPosition(side)) > .22f) return false;
+            landingSide = side;
+            landed = true;
+            level.ShowHint("Stand still on the end. Your weight tilts that side down; WASD flies away.");
             return true;
         }
 
-        public void Leave() { landingSide = 0; landed = false; }
+        public void Leave()
+        {
+            if (landingSide != 0) boardAfter = Time.time + .3f;
+            landingSide = 0;
+            landed = false;
+        }
 
         private void LateUpdate()
         {
+            if (landingSide == 0 && Time.time >= boardAfter)
+            {
+                if (Vector2.Distance(level.bat.transform.position, EndPosition(1)) <= .22f) TryBoard(transform.TransformPoint(new Vector3(.45f, 0, 0)));
+                else if (Vector2.Distance(level.bat.transform.position, EndPosition(-1)) <= .22f) TryBoard(transform.TransformPoint(new Vector3(-.45f, 0, 0)));
+            }
             if (landingSide == 0) return;
             if (!landed && Vector2.Distance(level.bat.transform.position, EndPosition(landingSide)) > .12f) return;
             landed = true;

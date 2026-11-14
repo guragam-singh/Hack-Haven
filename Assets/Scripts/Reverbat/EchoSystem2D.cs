@@ -123,6 +123,7 @@ namespace Reverbat
             float duration = Mathf.Max(.03f, distance / pulseSpeed);
             for (float elapsed = 0; elapsed < duration; elapsed += Time.deltaTime)
             {
+                if (line == returning && end == points.Count - 1) points[end] = transform.position;
                 line.SetPosition(end, Vector3.Lerp(points[end - 1], points[end], elapsed / duration));
                 yield return null;
             }

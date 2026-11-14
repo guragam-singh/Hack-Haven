@@ -23,10 +23,12 @@ namespace Reverbat
         private float hintUntil;
         private string hint = "Only the coffin is visible. Use Echo Pulse to discover the dark room.";
         private GUIStyle text, title, small, button;
+        private Color bellBaseColor;
 
         private void Awake()
         {
             artifact.SetActive(false);
+            bellBaseColor = bell.color;
             mechanism.enabled = false;
             hintUntil = float.PositiveInfinity;
             tiltable = reflector.gameObject.AddComponent<TiltableReflector2D>();
@@ -83,7 +85,7 @@ namespace Reverbat
             coffin.GetComponent<Collider2D>().enabled = false;
             artifact.SetActive(true);
             StartCoroutine(FlashBell());
-            ShowHint("Coffin unlocked! Click the red artifact to fly over and collect it.", 8);
+            ShowHint("Coffin unlocked! Use WASD to approach the red artifact, then click it.", 8);
             NotifyDialogue(DialogueIds.Coffin);
         }
 
@@ -91,7 +93,7 @@ namespace Reverbat
         {
             bell.color = Color.green;
             yield return new WaitForSeconds(.8f);
-            bell.color = new Color(1, .82f, .15f);
+            bell.color = bellBaseColor;
         }
 
         public bool TryCollect(Vector2 player)
@@ -123,23 +125,25 @@ namespace Reverbat
             if (darkness.Visible(reflector.GetComponent<SpriteRenderer>()))
             {
                 LabelWorld(reflector, "REFLECTOR / " + tiltable.Angle.ToString("0") + "°", new Vector2(0, 68));
-                LabelWorld(reflector, "LEFT: no response   |   RIGHT: bell → coffin", new Vector2(0, 95));
+                LabelWorld(reflector, "ECHO: RIGHT HALF", new Vector2(0, 95));
             }
             if (darkness.Visible(bell)) LabelWorld(bell.transform, "BELL", new Vector2(0, -48));
             LabelWorld(coffin.transform, CoffinOpen ? "COFFIN / OPEN" : "COFFIN / LOCKED", new Vector2(0, -85));
             GUI.Box(new Rect(0, 620, 1280, 100), GUIContent.none);
-            GUI.backgroundColor = !bat.EchoSelected && !bat.PulseSelected ? new Color(.65f, .55f, 1) : Color.white;
-            if (GUI.Button(new Rect(20, 635, 180, 43), "Move", button)) bat.SelectEcho(false);
             GUI.backgroundColor = bat.EchoSelected ? Color.cyan : Color.white;
-            if (GUI.Button(new Rect(210, 635, 210, 43), "Echo Sight", button)) bat.SelectEcho(true);
+            if (GUI.Button(new Rect(20, 635, 290, 43), "1  Echo Sight", button)) bat.SelectAbility(0);
             GUI.backgroundColor = bat.PulseSelected ? Color.cyan : Color.white;
-            if (GUI.Button(new Rect(430, 635, 210, 43), "Echo Pulse", button)) bat.SelectPulse();
+            if (GUI.Button(new Rect(330, 635, 290, 43), "2  Echo Pulse", button)) bat.SelectAbility(1);
+            GUI.backgroundColor = bat.SelectedAbility == 2 ? Color.cyan : Color.white;
+            GUI.enabled = bat.IsAbilityUnlocked(2);
+            if (GUI.Button(new Rect(640, 635, 300, 43), Complete ? "3  Resonance / Unlocked" : "3  Resonance / Locked", button)) bat.SelectAbility(2);
             GUI.backgroundColor = Color.white;
             GUI.enabled = false;
-            GUI.Button(new Rect(650, 635, 310, 43), Complete ? "Resonance / Unlocked" : "Resonance / Locked", button);
-            GUI.Button(new Rect(970, 635, 290, 43), "Mimicry / Locked", button);
+            GUI.Button(new Rect(960, 635, 300, 43), "Mimicry / Locked", button);
             GUI.enabled = true;
-            GUI.Label(new Rect(40, 681, 1200, 28), "Mouse only  •  Move: click a clear location  •  Echo Sight: click to aim and emit  •  Artifact: click to collect", small);
+            var art = GetComponent<Level01ArtPresentation>();
+            if (art != null) art.DrawAbilityIcons();
+            GUI.Label(new Rect(40, 681, 1200, 28), "WASD: fly  •  1–3 or toolbar: select ability  •  Left click: use ability  •  Approach artifact with WASD, then click to collect", small);
             if (Complete)
             {
                 GUI.Box(new Rect(400, 265, 480, 125), GUIContent.none);
