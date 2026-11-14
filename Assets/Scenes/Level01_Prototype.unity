@@ -586,7 +586,7 @@ SpriteRenderer:
   m_RenderingLayerMask: 1
   m_RendererPriority: 0
   m_Materials:
-  - {fileID: 2100000, guid: d262fbc687276ad4ead92c30c4c63f4a, type: 2}
+  - {fileID: 2100000, guid: 853484e460413eb4fbb76f7f643b965a, type: 2}
   m_StaticBatchInfo:
     firstSubMesh: 0
     subMeshCount: 0
@@ -614,7 +614,7 @@ SpriteRenderer:
   m_FlipX: 0
   m_FlipY: 0
   m_DrawMode: 1
-  m_Size: {x: 1.4516128, y: 1.4309797}
+  m_Size: {x: 1.8064516, y: 1.7807747}
   m_AdaptiveModeThreshold: 0.5
   m_SpriteTileMode: 0
   m_WasSpriteAssigned: 1
@@ -1993,6 +1993,7 @@ GameObject:
   - component: {fileID: 1943762521}
   - component: {fileID: 1943762520}
   - component: {fileID: 1943762522}
+  - component: {fileID: 1943762523}
   m_Layer: 0
   m_Name: Level01_Prototype
   m_TagString: Untagged
@@ -2063,6 +2064,24 @@ MonoBehaviour:
   echoSightIcon: {fileID: 2800000, guid: a9c21e16bab06ac449bce91978f5e408, type: 3}
   echoPulseIcon: {fileID: 2800000, guid: 13582bbba1da261449a599da8fc907b1, type: 3}
   lockedIcon: {fileID: 2800000, guid: d62e5ee5a626f65458b75966fcf909fb, type: 3}
+--- !u!114 &1943762523
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1943762519}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: df3a86382b44f4f479d7537ea89f30a7, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::Reverbat.EchoPulse2D
+  cooldown: 5
+  duration: 5
+  waveSpeed: 10
+  revealFeather: 1.4
+  fadeOutDuration: 0.8
+  revealMaterial: {fileID: 2100000, guid: c42398a13da74124e90a8211b06b8bfb, type: 2}
 --- !u!1 &2076517914
 GameObject:
   m_ObjectHideFlags: 0

@@ -70,7 +70,7 @@ namespace Reverbat
                 {
                     // Deliberately harmless scripted deflection; no realistic reflection math.
                     points.Add((Vector3)impact + new Vector3(rightHalf ? 3 : -3, rightHalf ? 1.5f : -.8f, 0));
-                    level.ShowHint("Tilt the right end to -45° first. Then, from the right, echo the plank's right half.");
+                    level.ShowHint("Sit on the right half to tilt to -45° first. Then, from the right, echo the plank's right half.");
                 }
             }
             else if (hit.collider != null)

@@ -3,7 +3,7 @@
 - WASD flies at the existing 4.5 units/second, with normalized diagonal input, existing circle collision checks and room clamps. There is no Move button or click-to-move.
 - Toolbar order: 1 Echo Sight, 2 Echo Pulse, 3 Resonance, then Mimicry. Mouse and keys share one selected-ability state and highlight. Locked abilities reject selection. Resonance remains the existing post-completion placeholder.
 - Select an ability, then aim and left-click to activate it. Merely selecting Echo Pulse does not fire it.
-- Fly onto the plank's right end with WASD and release the keys to weight/tilt it. WASD flies off again. The -45 degree / right-half / right-side puzzle gates are unchanged.
+- Touch down over the mirror's right half with WASD. It automatically eases to -45 degrees; moving away does not cancel it. The -45 degree / right-half / right-side puzzle gates are unchanged.
 - Approach the exposed artifact with WASD, then click it nearby to collect. A distant click never moves the bat.
 - Dialogue dismissal still blocks clicks underneath. Dialogue content, menu logic, level layout and progression are unchanged.
 
@@ -54,4 +54,8 @@ Controls verification: all 25 Play Mode checks passed. W/A/S/D and 1/2/3 were ex
 
 
 Art update: selected Guragam PNGs are integrated into the existing scene. See ART_INTEGRATION.md for the source mapping and sprite-region details. All 32 final art/gameplay Play Mode checks passed; all original collision geometry is preserved. Unused assets and baked-interactable reference sheets were not imported.
+
+
+
+Echo Pulse update: select the Level01_Prototype root and edit Echo Pulse 2D > Cooldown (2.5s) and Duration (5s). The room now reveals through a soft world-space circular mask; the bat is slightly enlarged with a light-purple stroke. See READABILITY_AND_PULSE.md. All 43 final checks passed.
 

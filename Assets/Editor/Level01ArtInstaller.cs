@@ -39,7 +39,7 @@ public static class Level01ArtInstaller
         }
         var material = level.coffin.sharedMaterial;
         var bat = level.bat.GetComponent<SpriteRenderer>();
-        Assign(bat, Sprite("01_Characters/Bat_Dracula.png"), .9f, .9f * 415 / 607, 4);
+        Assign(bat, Sprite("01_Characters/Bat_Dracula.png"), 1.12f, 1.12f * 415 / 607, 4);
         Assign(level.bell, Sprite("02_Interactables/Bell_Hanging.png"), 1.25f * 307 / 387, 1.25f, 2);
         Assign(level.coffin, Sprite("02_Interactables/Coffin_Closed.png"), 1.8f * 320 / 510, 1.8f, 2);
         Assign(level.reflector.GetComponent<SpriteRenderer>(), Sprite("02_Interactables/Reflector_Plate_Rotating.png"), 2.6f, .28f, 2);

@@ -33,7 +33,8 @@ namespace Reverbat
             hintUntil = float.PositiveInfinity;
             tiltable = reflector.gameObject.AddComponent<TiltableReflector2D>();
             tiltable.level = this;
-            darkness = gameObject.AddComponent<EchoPulse2D>();
+            darkness = GetComponent<EchoPulse2D>();
+            if (darkness == null) darkness = gameObject.AddComponent<EchoPulse2D>();
             darkness.Initialize(this);
             dialogue = gameObject.AddComponent<DialogueManager>();
             dialogue.Initialize(this);
@@ -61,7 +62,7 @@ namespace Reverbat
             MechanismDiscovered = true;
             mechanism.enabled = true;
             revealUntil = Time.time + 3;
-            if (!CoffinOpen) ShowHint("Tilt the plank's right end to -45°, then from the right echo its right half: bell → coffin.", 5);
+            if (!CoffinOpen) ShowHint("Sit on the mirror's right half to tilt it to -45°, then echo that half from the right: bell → coffin.", 5);
         }
 
         public void HitBell(bool throughReflector)
@@ -120,7 +121,7 @@ namespace Reverbat
             GUI.matrix = Matrix4x4.Scale(new Vector3(Screen.width / 1280f, Screen.height / 720f, 1));
             GUI.Box(new Rect(0, 0, 1280, 100), GUIContent.none);
             GUI.Label(new Rect(20, 7, 1240, 34), "REVERBAT  /  LEVEL 01 — THE CRYPT                         Artifacts: " + (Complete ? "1/1" : "0/1"), title);
-            GUI.Label(new Rect(25, 42, 1230, 52), Complete || Time.time < hintUntil ? hint : "Move onto the right end to tilt to -45°. Then echo the right half from the room's right side.", text);
+            GUI.Label(new Rect(25, 42, 1230, 52), Complete || Time.time < hintUntil ? hint : "Touch down on the mirror's right half to tilt it. Then echo that half from the room's right side.", text);
             if (darkness.Visible(bat.GetComponent<SpriteRenderer>())) LabelWorld(bat.transform, "BAT", new Vector2(0, 28));
             if (darkness.Visible(reflector.GetComponent<SpriteRenderer>()))
             {

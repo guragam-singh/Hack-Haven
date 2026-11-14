@@ -44,6 +44,9 @@ public static class Level01PrototypeValidation
         passed=running=true; results.Clear();
         var bat=l.bat;
         yield return null;
+        Check(l.GetComponent<EchoPulse2D>()==l.darkness,"Echo Pulse settings are on a saved Inspector component");
+        Check(bat.GetComponent<SpriteRenderer>().bounds.size.x>1.1f && bat.GetComponent<SpriteRenderer>().sharedMaterial.shader.name=="Reverbat/Bat Highlight","Bat is slightly larger and has the highlight shader");
+        Check(l.darkness.cooldown>0 && l.darkness.duration>0,"Cooldown and lit duration are independently configurable");
         var art=l.GetComponent<Level01ArtPresentation>();
         var stand=l.transform.Find("Reflector Stand Artwork");
         Quaternion standRotation=stand==null?Quaternion.identity:stand.rotation;
@@ -55,6 +58,7 @@ public static class Level01PrototypeValidation
             foreach(var sr in l.GetComponentsInChildren<SpriteRenderer>()) if(sr.enabled && sr.sprite!=null) visible++;
             Check(visible==1 && l.coffin.enabled,"Art scene initially shows only the coffin");
             Check(stand!=null && stand.parent==l.transform,"Reflector stand is stationary outside the rotating plank hierarchy");
+            Check(OwnTexture(l.bell) && OwnTexture(l.reflector.GetComponent<SpriteRenderer>()) && l.bell.sharedMaterial!=l.reflector.GetComponent<SpriteRenderer>().sharedMaterial,"Bell and mirror have isolated materials bound to their own sprite textures");
         }
         var dialogue=l.dialogue;
         var shown=new List<string>();
@@ -91,14 +95,37 @@ public static class Level01PrototypeValidation
         Keys(Key.Digit2); yield return new WaitForSeconds(.12f); Keys(); yield return new WaitForSeconds(.12f);
         Check(bat.PulseSelected,"Keyboard selection remains synchronized after mouse selection");
         Vector2 position=bat.transform.position;
+        Vector2 pulseOrigin=position;
         bat.ClickWorld(new Vector2(-4,1));
         Check(l.darkness.IsEmitting && !bat.IsMoving && Vector2.Distance(bat.transform.position,position)<.01f,"World click emits selected pulse without click-to-move");
         Check(dialogue.HasTriggered(DialogueIds.FirstPulse),"First pulse dialogue remains intact");
+        yield return new WaitForSeconds(.25f);
+        float waveRadius=l.darkness.CurrentRadius;
+        Check(l.darkness.RevealAmountAt(pulseOrigin)>.95f && l.darkness.RevealAmountAt(pulseOrigin+Vector2.right*8)<.01f,"Darkness clears near the bat while distant room pixels remain dark");
+        float edge=l.darkness.RevealAmountAt(pulseOrigin+Vector2.right*waveRadius);
+        Check(edge>.1f && edge<.9f,"Expanding reveal has a soft fading edge rather than sprite popping");
+        Check(!l.darkness.Emit() && l.darkness.CooldownRemaining>0,"Configured cooldown rejects an immediate second pulse");
+        yield return new WaitForEndOfFrame();
+        Directory.CreateDirectory("Captures");
+        ScreenCapture.CaptureScreenshot("Captures/EchoPulse_SoftFront.png");
         yield return new WaitForSeconds(1);
         Check(l.darkness.Visible(l.reflector.GetComponent<SpriteRenderer>()),"Echo Pulse still reveals environment");
+        while(l.darkness.ActivePulseCount>0) yield return null;
+        Check(l.darkness.RevealAmountAt(pulseOrigin)<.01f,"Default lit duration expires and darkness returns smoothly");
+        float cooldown=l.darkness.cooldown, duration=l.darkness.duration, fade=l.darkness.fadeOutDuration, waveSpeed=l.darkness.waveSpeed;
+        l.darkness.cooldown=.25f; l.darkness.duration=.3f; l.darkness.fadeOutDuration=.2f; l.darkness.waveSpeed=22;
+        Check(l.darkness.Emit(),"A new pulse is accepted once its cooldown has expired");
+        yield return new WaitForSeconds(.3f);
+        Check(l.darkness.IsEmitting && l.darkness.Emit() && l.darkness.ActivePulseCount==2,"Cooldown is independent of the animation and supports overlapping waves");
+        yield return new WaitForSeconds(.6f);
+        Check(l.darkness.RevealAmountAt(pulseOrigin)<.01f,"Inspector duration controls lit hold time separately from cooldown");
+        Check(OwnTexture(l.bell) && OwnTexture(l.reflector.GetComponent<SpriteRenderer>()),"Sprite texture bindings survive overlapping pulses and fades");
+        l.darkness.cooldown=cooldown; l.darkness.duration=duration; l.darkness.fadeOutDuration=fade; l.darkness.waveSpeed=waveSpeed;
         if(art!=null)
         {
-            Check(l.transform.Find("Room Artwork").GetComponent<SpriteRenderer>().enabled && stand.GetComponent<SpriteRenderer>().enabled,"Echo Pulse reveals supplied background and reflector stand");
+            l.darkness.Emit();
+            yield return new WaitForSeconds(.85f);
+            Check(l.darkness.Visible(l.transform.Find("Room Artwork").GetComponent<SpriteRenderer>()) && l.darkness.Visible(stand.GetComponent<SpriteRenderer>()),"Echo Pulse reveals supplied background and reflector stand");
             yield return new WaitForEndOfFrame();
             Directory.CreateDirectory("Captures");
             ScreenCapture.CaptureScreenshot("Captures/Level01_Art_Revealed.png");
@@ -113,9 +140,16 @@ public static class Level01PrototypeValidation
         // WASD route above the flat plank, then descend onto its right end.
         yield return DriveTo(bat,new Vector2(-3,1.2f));
         yield return DriveTo(bat,new Vector2(2.5f,1.2f));
-        yield return DriveTo(bat,l.tiltable.EndPosition(1),.18f);
+        yield return DriveTo(bat,new Vector2(.45f,.45f),.18f);
+        Vector3 contactPosition=bat.transform.position;
         yield return new WaitForSeconds(1.5f);
-        Check(l.tiltable.CorrectAngle && l.tiltable.HasBeenTiltedToCorrectAngle,"WASD boarding right end tilts plank to -45 degrees");
+        Check(l.tiltable.CorrectAngle && l.tiltable.HasBeenTiltedToCorrectAngle,"Sitting anywhere on the right half automatically tilts plank to -45 degrees");
+        Check(Vector3.Distance(contactPosition,bat.transform.position)<.02f,"Mirror tilt does not teleport or drag the bat");
+        Check(l.bell.sprite.name=="Bell_Hanging" && l.reflector.GetComponent<SpriteRenderer>().sprite.name=="Reflector_Plate_Rotating" && OwnTexture(l.bell) && OwnTexture(l.reflector.GetComponent<SpriteRenderer>()),"Bell and mirror sprites remain correct after mid-game tilt");
+        l.darkness.Emit();
+        yield return new WaitForSeconds(.8f);
+        yield return new WaitForEndOfFrame();
+        ScreenCapture.CaptureScreenshot("Captures/MirrorTextureFix_TiltedVerified.png");
         if(art!=null) Check(Quaternion.Angle(stand.rotation,standRotation)<.01f && Vector3.Distance(stand.position,standPosition)<.001f,"Stand does not rotate or move with the tilted plate");
         Check(dialogue.HasTriggered(DialogueIds.Reflector) && dialogue.HasTriggered(DialogueIds.Tilt),"Discovery and tilt dialogue still trigger");
         before=bat.transform.position;
@@ -153,6 +187,7 @@ public static class Level01PrototypeValidation
         Debug.Log("[REVERBAT CONTROLS] "+(passed?"ALL PASSED":"FAILED"));
         SessionState.SetBool("ReverbatValidate",false);running=false;
     }
+    private static bool OwnTexture(SpriteRenderer sr) => sr.sprite!=null && sr.sharedMaterial.GetTexture("_MainTex")==sr.sprite.texture;
     private static IEnumerator DriveTo(BatController2D bat,Vector2 target,float tolerance=.1f)
     {
         Keys(); yield return null;

@@ -2,68 +2,59 @@ using UnityEngine;
 
 namespace Reverbat
 {
-    // A constrained seesaw: the bat is the load and is carried by the rotating surface.
-    // The settled tilt stays latched when the bat flies off to aim a sound beam.
+    // A forgiving scripted seesaw: contact on a half latches a target; the bat is never teleported.
     public sealed class TiltableReflector2D : MonoBehaviour
     {
         public Level01Manager level;
-        public float Angle => Mathf.DeltaAngle(0, transform.eulerAngles.z);
-        public bool CorrectAngle => Mathf.Abs(Mathf.DeltaAngle(Angle, -45)) <= 10.001f;
-        public bool HasBeenTiltedToCorrectAngle { get; private set; }
-        private int landingSide;
-        private bool landed;
-        private float boardAfter;
-        public Vector2 LaunchPoint => new Vector2(-1.5f, 3.214286f);
-
-        private void Awake() { transform.rotation = Quaternion.identity; }
-
+        [Min(.05f)] public float tiltSmoothTime=.18f;
+        public float Angle => Mathf.DeltaAngle(0,transform.eulerAngles.z);
+        public bool CorrectAngle => Mathf.Abs(Mathf.DeltaAngle(Angle,-45))<=10.001f;
+        public bool HasBeenTiltedToCorrectAngle {get;private set;}
+        public bool IsTurning => Mathf.Abs(Mathf.DeltaAngle(Angle,targetAngle))>.1f;
+        private float targetAngle,angularVelocity;
+        private bool rightHalfWeighted;
+        private Collider2D surface;
+        private void Awake(){transform.rotation=Quaternion.identity; surface=GetComponent<Collider2D>();}
         public Vector2 EndPosition(int side)
         {
-            return (Vector2)transform.position + (Vector2)transform.right * (side * 1.12f)
-                + (Vector2)transform.up * (level.bat.radius + .16f);
+            return (Vector2)transform.position+(Vector2)transform.right*(side*1.12f)+(Vector2)transform.up*(level.bat.radius+.16f);
         }
-
         public bool TryBoard(Vector2 point)
         {
-            Vector2 local = transform.InverseTransformPoint(point);
-            if (Mathf.Abs(local.x) < .25f || Mathf.Abs(local.x) > .75f || Mathf.Abs(local.y) > 5) return false;
+            if(level==null || surface==null) return false;
+            Vector2 bat=level.bat.transform.position;
+            Vector2 delta=bat-(Vector2)transform.position;
+            float height=Vector2.Dot(delta,transform.up);
+            float span=Mathf.Abs(Vector2.Dot(delta,transform.right));
+            // A generous area above either half replaces the tiny end-point target.
+            if(Mathf.Abs(delta.x)<.08f || span>1.5f || height<-.05f || height>level.bat.radius+.5f || Vector2.Distance(bat,surface.ClosestPoint(bat))>level.bat.radius+.5f) return false;
+            bool right=delta.x>0;
+            if((point.x>transform.position.x)!=right) return false;
+            float next=right?-45:45;
+            if(IsTurning && Mathf.Abs(Mathf.DeltaAngle(targetAngle,next))>1) return false;
+            targetAngle=next;
+            rightHalfWeighted|=right;
             level.NotifyDialogue(DialogueIds.Reflector);
-            int side = local.x > 0 ? 1 : -1;
-            if (Vector2.Distance(level.bat.transform.position, EndPosition(side)) > .22f) return false;
-            landingSide = side;
-            landed = true;
-            level.ShowHint("Stand still on the end. Your weight tilts that side down; WASD flies away.");
             return true;
         }
-
-        public void Leave()
-        {
-            if (landingSide != 0) boardAfter = Time.time + .3f;
-            landingSide = 0;
-            landed = false;
-        }
-
+        // Kept for the movement controller; moving away does not cancel an already latched tilt.
+        public void Leave() { }
         private void LateUpdate()
         {
-            if (landingSide == 0 && Time.time >= boardAfter)
+            if(level==null) return;
+            TryBoard(level.bat.transform.position);
+            float angle=Mathf.SmoothDampAngle(Angle,targetAngle,ref angularVelocity,tiltSmoothTime,Mathf.Infinity,Time.deltaTime);
+            if(Mathf.Abs(Mathf.DeltaAngle(angle,targetAngle))<.05f){angle=targetAngle;angularVelocity=0;}
+            if(Mathf.Abs(Mathf.DeltaAngle(Angle,angle))>.0001f)
             {
-                if (Vector2.Distance(level.bat.transform.position, EndPosition(1)) <= .22f) TryBoard(transform.TransformPoint(new Vector3(.45f, 0, 0)));
-                else if (Vector2.Distance(level.bat.transform.position, EndPosition(-1)) <= .22f) TryBoard(transform.TransformPoint(new Vector3(-.45f, 0, 0)));
+                transform.rotation=Quaternion.Euler(0,0,angle);
+                Physics2D.SyncTransforms();
             }
-            if (landingSide == 0) return;
-            if (!landed && Vector2.Distance(level.bat.transform.position, EndPosition(landingSide)) > .12f) return;
-            landed = true;
-            level.bat.StopMoving();
-            float target = landingSide > 0 ? -45 : 45;
-            float angle = Mathf.MoveTowardsAngle(Angle, target, 90 * Time.deltaTime);
-            transform.rotation = Quaternion.Euler(0, 0, angle);
-            if (CorrectAngle)
+            if(rightHalfWeighted && CorrectAngle)
             {
-                if (!HasBeenTiltedToCorrectAngle) level.NotifyDialogue(DialogueIds.Tilt);
-                HasBeenTiltedToCorrectAngle = true;
+                if(!HasBeenTiltedToCorrectAngle) level.NotifyDialogue(DialogueIds.Tilt);
+                HasBeenTiltedToCorrectAngle=true;
             }
-            level.bat.transform.position = EndPosition(landingSide);
-            Physics2D.SyncTransforms();
         }
     }
 }
