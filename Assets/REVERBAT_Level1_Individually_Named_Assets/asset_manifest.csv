@@ -1,0 +1,70 @@
+asset,description,notes,size
+00_Background/BG_Room_Clean_GameplayObjectsRemoved.png,"Room background with baked bell, reflector and coffin digitally painted out",May need minor manual touch-up where objects were removed; preserves side decorations,1672x941
+00_Background/BG_Room_WithBakedBellReflectorCoffin_REFERENCE_ONLY.png,"Original kid-drawn room with bell, reflector and coffin baked into wall",REFERENCE ONLY: do not use as Unity gameplay background because core objects are duplicated,1672x941
+01_Characters/Bat_Dracula.png,"Single bat sprite, wings extended",,607x415
+02_Interactables/Bell_Hanging.png,Yellow hanging bell,,307x387
+02_Interactables/Coffin_Closed.png,"Coffin closed, red with yellow cross",,320x510
+02_Interactables/Coffin_Open_Interior.png,Coffin interior/open view; separate state,,352x510
+02_Interactables/Reflector_Plate_Rotating.png,Blue horizontal reflective plate,Assign to rotating child sprite; pivot must match the existing Unity transform,562x110
+02_Interactables/Reflector_Stand_Static.png,Gray reflector pivot/base,Keep as static separate object,321x400
+03_Background_Decor/Banner_Bat_Red.png,Tattered red bat-emblem banner,,265x467
+03_Background_Decor/Books_Stack.png,Stack of three books,,329x244
+03_Background_Decor/Candle_Stand_Single.png,One tall floor candle stand,,219x511
+03_Background_Decor/Chandelier_Candles.png,Ceiling chandelier with five candles,,586x518
+03_Background_Decor/Cobweb_Corner.png,Gray cobweb hanging from corner,,375x343
+03_Background_Decor/Curtains_Red_Pair.png,Two red curtain panels tied back,,406x484
+03_Background_Decor/Gothic_Window_Moon.png,Pointed Gothic window with moon,,329x555
+03_Background_Decor/Metal_Chain_Arc.png,Curved hanging metal chain,,433x178
+03_Background_Decor/Portrait_Castle_Framed.png,Framed painting of castle and moon,,399x357
+03_Background_Decor/Potion_Green_Flask.png,Pointed flask with green potion,,196x270
+03_Background_Decor/Potion_Purple_Bottle.png,Round flask with purple potion,,187x293
+03_Background_Decor/Red_Rug.png,Red rug with gold border and fringes,,524x227
+03_Background_Decor/Skull.png,Cartoon ivory skull,,227x266
+03_Background_Decor/Stone_Column_Broken.png,Broken masonry column and loose stones,,240x177
+03_Background_Decor/Stone_Column_Full.png,Full gray stone pillar,,240x412
+03_Background_Decor/Wall_Shelf_Books_Potion.png,Wood shelf with books and bottle,,453x267
+03_Background_Decor/Wall_Stone_Ledge.png,Plain low stone shelf/ledge,,452x159
+03_Background_Decor/Wall_Torch_Flame.png,Flaming wall-mounted torch,,238x371
+03_Background_Decor/Wooden_Barrel.png,Barrel with gray metal hoops,,306x323
+03_Background_Decor/Wooden_Crate.png,Square wooden storage crate,,317x291
+03_Background_Decor/Wooden_Stool.png,Round three-legged wooden stool,,330x288
+04_Foreground/FG_Cracked_Stone_Floor_Edge.png,Wide rocky platform/floor lip,,1401x199
+04_Foreground/FG_Pale_Mist.png,Pale purple mist cloud,,675x298
+04_Foreground/FG_Rubble_Rock_Pile.png,Pile of gray boulders,,531x306
+04_Foreground/FG_Stone_Balustrade.png,Short stone balcony balustrade,,720x355
+04_Foreground/FG_Thorn_Bush.png,Spiky dark thorn bush,,639x353
+05_FX/FX_Coffin_Reveal_Glow.png,Coffin silhouette with cyan reveal glow,"State/effect overlay, not a replacement coffin sprite",379x385
+05_FX/FX_Cyan_Sparkles.png,Three uneven cyan star sparkles,,257x289
+05_FX/FX_Darkness_Sweep.png,Soft grayish-purple shadow smear,,965x267
+05_FX/FX_Dust_Puff.png,Pale gray dust cloud,,447x320
+05_FX/FX_EchoPulse_Circular.png,Three uneven cyan rings radiating outward,,388x389
+05_FX/FX_EchoReflection_WithBarrier_REFERENCE.png,Cyan reflected sound visualization with vertical reflective object,This image combines effect with a gray barrier; reference-only rather than a clean standalone reflected-wave sprite,531x348
+05_FX/FX_EchoWave_Directional.png,Cyan directional sound arcs,,281x322
+05_FX/FX_Interaction_ImpactBurst.png,Jagged cyan impact burst,,398x320
+06_UI/UI_Ability_EchoPulse_Icon.png,Yellow sound pulse ability button,,217x231
+06_UI/UI_Ability_EchoSight_Icon.png,Blue eye ability button,,240x224
+06_UI/UI_Ability_Locked_Icon.png,Gray locked ability button,,222x225
+06_UI/UI_Artifact_Counter_0of1_BakedText.png,Artifact counter: 0/1,Text is baked into image; use dynamic text for actual counter,221x163
+06_UI/UI_Bottom_HUD_Bar_WithBakedIcons_REFERENCE.png,"Full dark bottom HUD with slots, bat logo, artifact counter, settings",Some icons and 0/1 text are baked into image; do not layer duplicate icons on top,1404x177
+06_UI/UI_Dialogue_ThreeDots_Icon.png,Cream chat bubble with three dots,,272x208
+06_UI/UI_InventorySlot_Empty_01.png,Empty cream item slot position 1,,181x173
+06_UI/UI_InventorySlot_Empty_02.png,Empty cream item slot position 2,,178x172
+06_UI/UI_InventorySlot_Empty_03.png,Empty cream item slot position 3,,181x171
+06_UI/UI_InventorySlot_Empty_04.png,Empty cream item slot position 4,,173x171
+06_UI/UI_InventorySlot_Empty_05.png,Empty cream item slot position 5,,177x173
+06_UI/UI_Level_Title_BakedText.png,Level header: REVERBAT / LEVEL 01 — THE CRYPT,Text is baked into image,1386x156
+06_UI/UI_Objective_Panel_BakedText.png,Objective instruction card,Text is baked into image; does not update dynamically,942x201
+06_UI/UI_Settings_Gear.png,Settings gear icon,,194x174
+07_Extras/Collectible_BloodDrop_Red.png,Single red blood artifact droplet,,281x403
+07_Extras/Crest_Bat_Shield_Purple.png,Purple shield crest with bat,,374x413
+07_Extras/Emphasis_Lines_Pink.png,Three pink comic emphasis lines,,116x175
+07_Extras/Emphasis_Lines_Yellow.png,Three yellow comic emphasis lines,,158x256
+07_Extras/Key_Golden.png,Yellow key,,271x360
+07_Extras/LockPlate_Keyhole_Gold.png,Gold square with keyhole,,296x351
+07_Extras/Mouse_Cartoon_Gray.png,Tiny gray mouse,,335x268
+07_Extras/Ornament_Corner_Left.png,Purple corner flourished frame left,,279x180
+07_Extras/Ornament_Corner_Right.png,Purple corner flourished frame right,,297x180
+07_Extras/Ornament_Divider_GoldFlower.png,Horizontal flourish and golden flower center,,459x122
+07_Extras/Ornament_Swirl_Top.png,Long purple ornamental scroll flourish,,1325x165
+07_Extras/Sparkle_Stars_Gold.png,Two gold cartoon stars,,230x247
+07_Extras/SpeechBubble_Blank_Cream.png,Empty hand-drawn dialogue balloon,,395x270
