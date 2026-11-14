@@ -27,6 +27,14 @@ namespace Reverbat
         {
             level = source;
             if (content == null) content = Resources.Load<DialogueLibrary>("Level01Dialogue");
+            InitializeVoice();
+            level.DialogueTriggered += OnTrigger;
+            if (content == null) Debug.LogError("[REVERBAT] Missing Resources/Level01Dialogue audio library.");
+        }
+
+        public void InitializeVoice()
+        {
+            if (voice != null) return;
             voice = gameObject.AddComponent<AudioSource>();
             voice.playOnAwake = false;
             voice.loop = false;
@@ -34,9 +42,8 @@ namespace Reverbat
             voice.volume = 1;
             voice.ignoreListenerVolume = false;
             AudioListener.volume = Mathf.Clamp01(PlayerPrefs.GetFloat(MainMenu.VolumeKey, AudioListener.volume));
-            if (FindFirstObjectByType<AudioListener>() == null) gameObject.AddComponent<AudioListener>();
-            level.DialogueTriggered += OnTrigger;
-            if (content == null) Debug.LogError("[REVERBAT] Missing Resources/Level01Dialogue audio library.");
+            if (FindAnyObjectByType<AudioListener>() == null)
+                (level != null ? level.gameObject : gameObject).AddComponent<AudioListener>();
         }
 
         private void OnDestroy()
@@ -50,7 +57,12 @@ namespace Reverbat
         public bool TryTrigger(string id)
         {
             var entry = content == null ? null : content.Find(id);
-            if (entry == null || entry.voiceClip == null || !triggered.Add(id)) return false;
+            return Enqueue(entry);
+        }
+
+        public bool Enqueue(DialogueEntry entry)
+        {
+            if (entry == null || entry.voiceClip == null || !triggered.Add(entry.triggerId)) return false;
             pending.Enqueue(entry);
             if (active == null) ShowNext();
             return true;

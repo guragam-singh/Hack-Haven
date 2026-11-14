@@ -38,7 +38,7 @@ public static class Level01PrototypeValidation
     {
         if(!EditorApplication.isPlaying || running || !SessionState.GetBool("ReverbatValidate",false)) return;
         var l=Object.FindFirstObjectByType<Level01Manager>();
-        if(l!=null) l.StartCoroutine(Verify(l));
+        if(l!=null) l.dialogue.StartCoroutine(Verify(l));
     }
     private static void Check(bool ok,string message)
     {

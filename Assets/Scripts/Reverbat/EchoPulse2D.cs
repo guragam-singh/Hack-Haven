@@ -25,6 +25,8 @@ namespace Reverbat
         private readonly Vector4[] settings = new Vector4[MaximumWaves];
         private readonly Vector3[] circle = new Vector3[Segments + 1];
         private Level01Manager level;
+        private BatController2D emitter;
+        public event System.Action Emitted;
         private float readyAt;
         private bool ownsMaterial;
         public float CooldownRemaining => Mathf.Max(0, readyAt - Time.time);
@@ -48,8 +50,17 @@ namespace Reverbat
         public void Initialize(Level01Manager manager)
         {
             level=manager;
+            var targets = new List<SpriteRenderer>();
+            foreach (var sprite in level.GetComponentsInChildren<SpriteRenderer>(true))
+                if (sprite != level.coffin && sprite.gameObject != level.artifact) targets.Add(sprite);
+            Initialize(level.bat, targets);
+        }
+
+        public void Initialize(BatController2D bat, IEnumerable<SpriteRenderer> targets)
+        {
+            emitter = bat;
             readyAt=0;
-            level.bat.roomCamera.backgroundColor=Color.black;
+            bat.roomCamera.backgroundColor=Color.black;
             if(revealMaterial==null)
             {
                 var shader=Shader.Find("Reverbat/Echo Reveal Sprite");
@@ -57,9 +68,8 @@ namespace Reverbat
                 revealMaterial=new Material(shader); ownsMaterial=true;
             }
             worldSprites.Clear();
-            foreach(var sprite in level.GetComponentsInChildren<SpriteRenderer>(true))
+            foreach(var sprite in targets)
             {
-                if(sprite==level.coffin || sprite.gameObject==level.artifact) continue;
                 worldSprites.Add(sprite);
                 // Give every sprite its own explicit texture binding. Sharing the custom reveal
                 // material can leak another sprite's texture through Unity's sliced-sprite batches.
@@ -104,26 +114,27 @@ namespace Reverbat
 
         public bool Emit()
         {
-            if(level==null || level.Complete || revealMaterial==null) return false;
+            if(emitter==null || (level!=null && level.Complete) || (emitter.hallway!=null && emitter.hallway.Exiting) || revealMaterial==null) return false;
             if(Time.time<readyAt)
             {
-                level.ShowHint("Echo Pulse recharging ("+CooldownRemaining.ToString("0.0")+"s).");
+                if(level!=null) level.ShowHint("Echo Pulse recharging ("+CooldownRemaining.ToString("0.0")+"s).");
                 return false;
             }
             readyAt=Time.time+Mathf.Max(0,cooldown);
             if(pulses.Count==MaximumWaves){Destroy(pulses[0].ring.gameObject); pulses.RemoveAt(0);}
             var obj=new GameObject("Echo Pulse Ripple"); obj.transform.SetParent(transform,false);
             var ring=obj.AddComponent<LineRenderer>();
-            ring.sharedMaterial=level.bat.echo.outgoing.sharedMaterial;
+            ring.sharedMaterial=emitter.echo.outgoing.sharedMaterial;
             ring.startColor=ring.endColor=Color.cyan;
             ring.startWidth=ring.endWidth=.035f;
             ring.positionCount=Segments+1;
             ring.sortingOrder=15;
             ring.useWorldSpace=true;
-            pulses.Add(new Pulse {origin=level.bat.transform.position,started=Time.time,speed=Mathf.Max(.1f,waveSpeed),hold=Mathf.Max(0,duration),fade=Mathf.Max(.01f,fadeOutDuration),feather=Mathf.Max(.05f,revealFeather),ring=ring});
+            pulses.Add(new Pulse {origin=emitter.transform.position,started=Time.time,speed=Mathf.Max(.1f,waveSpeed),hold=Mathf.Max(0,duration),fade=Mathf.Max(.01f,fadeOutDuration),feather=Mathf.Max(.05f,revealFeather),ring=ring});
             foreach(var sprite in worldSprites) sprite.enabled=true;
             Publish();
-            level.NotifyDialogue(DialogueIds.FirstPulse);
+            if(level!=null) level.NotifyDialogue(DialogueIds.FirstPulse);
+            Emitted?.Invoke();
             return true;
         }
 

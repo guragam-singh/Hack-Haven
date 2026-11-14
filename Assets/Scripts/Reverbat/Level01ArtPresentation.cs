@@ -39,16 +39,9 @@ namespace Reverbat
         {
             Color old = GUI.color;
             GUI.color = Color.white;
-            Icon(new Rect(30, 638, 35, 35), echoSightIcon);
-            Icon(new Rect(340, 638, 35, 35), echoPulseIcon);
-            if (!level.Complete) Icon(new Rect(650, 638, 35, 35), lockedIcon);
-            Icon(new Rect(970, 638, 35, 35), lockedIcon);
+            AbilityToolbar.DrawIcons(echoSightIcon, echoPulseIcon, level.Complete ? null : lockedIcon, lockedIcon);
             GUI.color = old;
         }
 
-        private static void Icon(Rect rect, Texture2D texture)
-        {
-            if (texture != null) GUI.DrawTexture(rect, texture, ScaleMode.ScaleToFit, true);
-        }
     }
 }

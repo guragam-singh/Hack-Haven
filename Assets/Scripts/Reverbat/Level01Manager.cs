@@ -24,8 +24,8 @@ namespace Reverbat
         private float hintUntil;
         private string hint = "";
         private GUIStyle text, title, counter, small, button, instruction;
-        public static Rect EchoSightButtonRect => new Rect(20, 635, 290, 43);
-        public static Rect EchoPulseButtonRect => new Rect(330, 635, 290, 43);
+        public static Rect EchoSightButtonRect => AbilityToolbar.RectFor(0);
+        public static Rect EchoPulseButtonRect => AbilityToolbar.RectFor(1);
         private Color bellBaseColor;
         private bool levelBegun;
 
@@ -40,7 +40,9 @@ namespace Reverbat
             darkness = GetComponent<EchoPulse2D>();
             if (darkness == null) darkness = gameObject.AddComponent<EchoPulse2D>();
             darkness.Initialize(this);
-            dialogue = gameObject.AddComponent<DialogueManager>();
+            var voiceHost = new GameObject("Level dialogue");
+            voiceHost.transform.SetParent(transform);
+            dialogue = voiceHost.AddComponent<DialogueManager>();
             dialogue.Initialize(this);
             tutorial = GetComponent<TutorialManager>();
             if (tutorial == null) tutorial = gameObject.AddComponent<TutorialManager>();
@@ -119,6 +121,12 @@ namespace Reverbat
             hint = "Artifact Collected! Resonance Unlocked.";
             NotifyDialogue(DialogueIds.Artifact);
             NotifyDialogue(DialogueIds.Announcement);
+
+            if (Application.CanStreamedLevelBeLoaded(SleepingGuardLevel.SceneName))
+            {
+                SleepingGuardLevel.EnterFromLevelOne(dialogue);
+                UnityEngine.SceneManagement.SceneManager.LoadScene(SleepingGuardLevel.SceneName);
+            }
             return true;
         }
 
@@ -151,18 +159,7 @@ namespace Reverbat
             LabelWorld(coffin.transform, CoffinOpen ? "COFFIN / OPEN" : "COFFIN / LOCKED", new Vector2(0, -85));
             GUI.Box(new Rect(0, 620, 1280, 100), GUIContent.none);
             bool inputEnabled = tutorial == null || !tutorial.BlocksGameplayInput;
-            GUI.enabled = inputEnabled;
-            GUI.backgroundColor = bat.EchoSelected ? Color.cyan : Color.white;
-            if (GUI.Button(EchoSightButtonRect, "1  Echo Sight", button)) bat.SelectAbility(0);
-            GUI.backgroundColor = bat.PulseSelected ? Color.cyan : Color.white;
-            if (GUI.Button(EchoPulseButtonRect, "2  Echo Pulse", button)) bat.SelectAbility(1);
-            GUI.backgroundColor = bat.SelectedAbility == 2 ? Color.cyan : Color.white;
-            GUI.enabled = inputEnabled && bat.IsAbilityUnlocked(2);
-            if (GUI.Button(new Rect(640, 635, 300, 43), Complete ? "3  Resonance / Unlocked" : "3  Resonance / Locked", button)) bat.SelectAbility(2);
-            GUI.backgroundColor = Color.white;
-            GUI.enabled = false;
-            GUI.Button(new Rect(960, 635, 300, 43), "Mimicry / Locked", button);
-            GUI.enabled = true;
+            AbilityToolbar.Draw(bat, button, inputEnabled);
             var art = GetComponent<Level01ArtPresentation>();
             if (art != null) art.DrawAbilityIcons();
             GUI.Label(new Rect(40, 681, 1200, 28), "WASD: fly  •  1–3 or toolbar: select ability  •  Left click: use ability  •  Approach artifact with WASD, then click to collect", small);

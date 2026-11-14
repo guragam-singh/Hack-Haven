@@ -8,6 +8,9 @@ namespace Reverbat
         public Camera roomCamera;
         public EchoSystem2D echo;
         public Level01Manager level;
+        public SleepingGuardLevel hallway;
+        private bool InputBlocked => hallway != null ? hallway.Exiting : level.tutorial != null && level.tutorial.BlocksGameplayInput;
+        private bool Finished => hallway != null ? hallway.Exiting : level.Complete;
         public float speed = 4.5f;
         public float radius = .25f;
         public Vector2 roomMin = new Vector2(-8.45f, -3.55f);
@@ -22,7 +25,7 @@ namespace Reverbat
 
         private void OnGUI()
         {
-            if (level.tutorial != null && level.tutorial.BlocksGameplayInput) { guiHeld.Clear(); return; }
+            if (InputBlocked) { guiHeld.Clear(); return; }
             var e = Event.current;
             if (e.type != EventType.KeyDown && e.type != EventType.KeyUp) return;
             if (e.type == EventType.KeyUp) { guiHeld.Remove(e.keyCode); return; }
@@ -35,7 +38,7 @@ namespace Reverbat
 
         private void Update()
         {
-            if (level.tutorial != null && level.tutorial.BlocksGameplayInput) { IsMoving = false; guiHeld.Clear(); return; }
+            if (InputBlocked) { IsMoving = false; guiHeld.Clear(); return; }
             var keyboard = Keyboard.current;
             Vector2 movement = Vector2.zero;
             if (keyboard != null)
@@ -52,14 +55,14 @@ namespace Reverbat
             if (guiHeld.Contains(KeyCode.S)) movement.y = -1;
             ApplyMovement(movement, Time.deltaTime);
             var mouse = Mouse.current;
-            if (mouse != null && mouse.leftButton.wasPressedThisFrame && !level.Complete)
+            if (mouse != null && mouse.leftButton.wasPressedThisFrame && !Finished)
                 HandleScreenClick(mouse.position.ReadValue());
         }
 
         public void ApplyMovement(Vector2 input, float deltaTime)
         {
             IsMoving = false;
-            if (level.Complete || (level.tutorial != null && level.tutorial.BlocksGameplayInput) || input.sqrMagnitude < .001f) return;
+            if (hallway != null || Finished || InputBlocked || input.sqrMagnitude < .001f) return;
             level.tiltable.Leave();
             Vector2 delta = Vector2.ClampMagnitude(input, 1) * speed * deltaTime;
             float step = delta.magnitude;
@@ -74,24 +77,35 @@ namespace Reverbat
 
         public bool HandleScreenClick(Vector2 screen)
         {
-            if (level.tutorial != null && level.tutorial.BlocksGameplayInput)
+            if (InputBlocked)
             {
-                level.tutorial.DismissControls();
+                if (level != null) level.tutorial.DismissControls();
                 return false;
             }
             float hudY = (Screen.height - screen.y) * 720f / Screen.height;
-            if (hudY <= 100 || hudY >= 620 || level.Complete) return false;
+            if (Finished) return false;
+            if (hudY >= 620)
+            {
+                // The Input System can deliver game-view clicks independently of IMGUI.
+                if (hallway != null)
+                {
+                    int slot = AbilityToolbar.HitTest(new Vector2(screen.x * 1280f / Screen.width, hudY));
+                    if (slot >= 0) SelectAbility(slot);
+                }
+                return false;
+            }
+            if (hallway == null && hudY <= 100) return false;
             ClickWorld(roomCamera.ScreenToWorldPoint(screen));
             return true;
         }
 
-        public bool IsAbilityUnlocked(int index) => index == 0 || index == 1 || (index == 2 && level.Complete);
+        public bool IsAbilityUnlocked(int index) => index == 0 || index == 1 || (index == 2 && (hallway != null ? hallway.ResonanceAvailable : level.Complete));
         public bool SelectAbility(int index)
         {
-            if (level.tutorial != null && level.tutorial.BlocksGameplayInput) return false;
+            if (InputBlocked) return false;
             if (!IsAbilityUnlocked(index)) return false;
             SelectedAbility = index;
-            level.ShowHint(index == 0 ? "Echo Sight: aim and click. WASD moves the bat." : "Echo Pulse selected: click to reveal. WASD moves the bat.");
+            if (level != null) level.ShowHint(index == 0 ? "Echo Sight: aim and click. WASD moves the bat." : "Echo Pulse selected: click to reveal. WASD moves the bat.");
             return true;
         }
         public void SelectEcho(bool selected) { SelectAbility(selected ? 0 : 1); }
@@ -100,7 +114,15 @@ namespace Reverbat
 
         public void ClickWorld(Vector2 point)
         {
-            if (level.Complete || (level.tutorial != null && level.tutorial.BlocksGameplayInput)) return;
+            if (Finished || InputBlocked) return;
+            if (hallway != null)
+            {
+                if (hallway.TryExit(point)) return;
+                if (PulseSelected) hallway.pulse.Emit();
+                else if (EchoSelected) echo.Emit(point);
+                else if (SelectedAbility == 2) hallway.EmitResonance(point);
+                return;
+            }
             if (level.CoffinOpen && Vector2.Distance(point, level.artifact.transform.position) < .7f)
             {
                 if (!level.TryCollect(transform.position)) level.ShowHint("Use WASD to get closer, then click the artifact.");

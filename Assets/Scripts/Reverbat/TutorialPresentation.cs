@@ -44,16 +44,10 @@ namespace Reverbat
             }
             else
             {
-                float pulse = .5f + .5f * Mathf.Sin(Time.unscaledTime * 4);
                 for (int i = 0; i < 2; i++)
                 {
                     if (!tutorial.HighlightsAbility(i)) continue;
-                    var target = HighlightRect(i);
-                    // Share the real button rectangles with the HUD so the glow cannot drift off target.
-                    for (int n = 7; n >= 1; n--)
-                        Border(new Rect(target.x - n, target.y - n, target.width + n * 2, target.height + n * 2),
-                            new Color(0, 1, 1, (.08f + pulse * .16f) * (8 - n) / 7), 2);
-                    Border(target, new Color(.15f, 1, 1, .75f + pulse * .25f), 3);
+                    DrawAbilityGlow(HighlightRect(i));
                 }
                 if (tutorial.ShowAbilityBarGuide)
                 {
@@ -77,6 +71,15 @@ namespace Reverbat
             GUI.matrix = previousMatrix;
             GUI.color = previousColor;
             GUI.depth = previousDepth;
+        }
+
+        public static void DrawAbilityGlow(Rect target)
+        {
+            float pulse = .5f + .5f * Mathf.Sin(Time.unscaledTime * 4);
+            for (int n = 7; n >= 1; n--)
+                Border(new Rect(target.x - n, target.y - n, target.width + n * 2, target.height + n * 2),
+                    new Color(0,1,1,(.08f + pulse * .16f) * (8-n)/7),2);
+            Border(target,new Color(.15f,1,1,.75f + pulse * .25f),3);
         }
 
         private void DrawControls()

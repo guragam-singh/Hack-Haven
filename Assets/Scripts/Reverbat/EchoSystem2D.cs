@@ -7,6 +7,7 @@ namespace Reverbat
     public sealed class EchoSystem2D : MonoBehaviour
     {
         public Level01Manager level;
+        public SleepingGuardLevel hallway;
         public LineRenderer outgoing;
         public LineRenderer returning;
         public float cooldown = .7f;
@@ -15,7 +16,7 @@ namespace Reverbat
         public int LastReflectionCount { get; private set; }
         public string LastHit { get; private set; }
         public bool LastScriptedRoute { get; private set; }
-        public bool ValidPuzzleRoute => IsEmitting && LastScriptedRoute
+        public bool ValidPuzzleRoute => level != null && IsEmitting && LastScriptedRoute
             && level.tiltable.CorrectAngle && level.tiltable.HasBeenTiltedToCorrectAngle;
         private float readyAt;
 
@@ -27,7 +28,7 @@ namespace Reverbat
 
         public bool Emit(Vector2 target)
         {
-            if (IsEmitting || Time.time < readyAt || level.Complete) return false;
+            if (IsEmitting || Time.time < readyAt || (hallway != null ? hallway.Exiting : level.Complete)) return false;
             Vector2 origin = transform.position;
             Vector2 direction = (target - origin).normalized;
             if (direction.sqrMagnitude < .01f) return false;
@@ -38,6 +39,14 @@ namespace Reverbat
             LastReflectionCount = 0;
             LastHit = "None";
             LastScriptedRoute = false;
+            if (hallway != null)
+            {
+                LastScriptedRoute = hallway.TraceEcho(origin, direction, points, out string hitName);
+                LastHit = hitName;
+                LastReflectionCount = LastScriptedRoute ? 1 : 0;
+                StartCoroutine(PlayPulse(points, contacts));
+                return true;
+            }
             RaycastHit2D hit = Physics2D.Raycast(origin, direction, 30);
             var plankCollider = level.reflector.GetComponent<Collider2D>();
             Vector2 closest = plankCollider.ClosestPoint(target);
@@ -92,6 +101,7 @@ namespace Reverbat
             for (int i = 1; i < points.Count; i++)
             {
                 yield return DrawSegment(outgoing, points, i);
+                if (hallway != null && LastScriptedRoute) hallway.EchoReached(i, points.Count - 1, points[i]);
                 if (i - 1 < contacts.Count && contacts[i - 1].surface != null)
                     contacts[i - 1].surface.OnSoundHit(contacts[i - 1].reflected);
             }
@@ -109,7 +119,7 @@ namespace Reverbat
                 contact.surface.OnEchoReturned();
                 if (contact.surface.response == SoundResponse.HiddenMechanism || contact.surface.response == SoundResponse.Bell) useful = true;
             }
-            if (!useful && LastHit != "Reflector") level.ShowHint("No useful response");
+            if (level != null && !useful && LastHit != "Reflector") level.ShowHint("No useful response");
             yield return new WaitForSeconds(.18f);
             outgoing.enabled = returning.enabled = false;
             IsEmitting = false;
