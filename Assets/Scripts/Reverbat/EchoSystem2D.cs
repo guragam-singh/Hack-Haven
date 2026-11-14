@@ -15,6 +15,8 @@ namespace Reverbat
         public int LastReflectionCount { get; private set; }
         public string LastHit { get; private set; }
         public bool LastScriptedRoute { get; private set; }
+        public bool ValidPuzzleRoute => IsEmitting && LastScriptedRoute
+            && level.tiltable.CorrectAngle && level.tiltable.HasBeenTiltedToCorrectAngle;
         private float readyAt;
 
         private struct Contact
@@ -45,15 +47,17 @@ namespace Reverbat
             bool plankHit = aimedAtPlank || hit.collider == plankCollider;
             if (plankHit)
             {
+                level.NotifyDialogue(DialogueIds.Reflector);
                 Vector2 impact = aimedAtPlank ? closest : hit.point;
                 points.Add(impact);
                 contacts.Add(new Contact { surface = plankCollider.GetComponent<SoundInteractable>() });
                 LastHit = plankCollider.name;
                 bool batOnRight = level.bat.roomCamera.WorldToViewportPoint(origin).x > .5f;
                 bool rightHalf = (aimedAtPlank ? target.x : impact.x) > level.reflector.position.x;
-                if (batOnRight && rightHalf)
+                LastReflectionCount = 1;
+                if (batOnRight && rightHalf && level.tiltable.CorrectAngle && level.tiltable.HasBeenTiltedToCorrectAngle)
                 {
-                    // Puzzle rule, independent of angle: plank -> bell -> coffin.
+                    // Scripted puzzle route, gated by the bat having tilted the plank correctly.
                     LastScriptedRoute = true;
                     LastReflectionCount = 1;
                     points.Add(level.bell.transform.position);
@@ -62,7 +66,12 @@ namespace Reverbat
                     contacts.Add(new Contact { surface = level.coffin.GetComponent<SoundInteractable>(), reflected = true });
                     LastHit = level.coffin.name;
                 }
-                else level.ShowHint("Move to the right side of the room, then echo the plank's right half.");
+                else
+                {
+                    // Deliberately harmless scripted deflection; no realistic reflection math.
+                    points.Add((Vector3)impact + new Vector3(rightHalf ? 3 : -3, rightHalf ? 1.5f : -.8f, 0));
+                    level.ShowHint("Tilt the right end to -45° first. Then, from the right, echo the plank's right half.");
+                }
             }
             else if (hit.collider != null)
             {

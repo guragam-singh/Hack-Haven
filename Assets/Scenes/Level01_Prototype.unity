@@ -560,7 +560,6 @@ MonoBehaviour:
   returning: {fileID: 79268550}
   cooldown: 0.7
   pulseSpeed: 18
-  maxReflections: 3
 --- !u!212 &565333951
 SpriteRenderer:
   serializedVersion: 3
@@ -817,7 +816,7 @@ Transform:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1163167537}
   serializedVersion: 2
-  m_LocalRotation: {x: -0, y: -0, z: 0.38268346, w: 0.9238795}
+  m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
   m_LocalPosition: {x: 0, y: 0, z: 0}
   m_LocalScale: {x: 2.6, y: 0.18, z: 0}
   m_ConstrainProportionsScale: 0

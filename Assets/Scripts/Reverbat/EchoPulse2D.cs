@@ -51,6 +51,7 @@ namespace Reverbat
         public bool Emit()
         {
             if (emitting || level.Complete) return false;
+            level.NotifyDialogue(DialogueIds.FirstPulse);
             StartCoroutine(Pulse());
             return true;
         }

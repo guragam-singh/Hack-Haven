@@ -25,11 +25,7 @@ namespace Reverbat
             var mouse = Mouse.current;
             if (mouse != null && mouse.leftButton.wasPressedThisFrame && !level.Complete)
             {
-                Vector2 screen = mouse.position.ReadValue();
-                // The immediate-mode HUD is drawn in a reference 1280 x 720 canvas.
-                float hudY = (Screen.height - screen.y) * 720f / Screen.height;
-                if (hudY > 100 && hudY < 620)
-                    ClickWorld(roomCamera.ScreenToWorldPoint(screen));
+                HandleScreenClick(mouse.position.ReadValue());
             }
             // Stay at the source until the return arrives; move clicks queue their destination.
             if (!IsMoving || echo.IsEmitting) return;
@@ -59,6 +55,16 @@ namespace Reverbat
             }
         }
 
+        public bool HandleScreenClick(Vector2 screen)
+        {
+            if (level.dialogue != null && level.dialogue.BlocksGameplayPointer(screen)) return false;
+            // Existing gameplay/toolbar hit regions stay unchanged.
+            float hudY = (Screen.height - screen.y) * 720f / Screen.height;
+            if (hudY <= 100 || hudY >= 620 || level.Complete) return false;
+            ClickWorld(roomCamera.ScreenToWorldPoint(screen));
+            return true;
+        }
+
         public void SelectEcho(bool selected)
         {
             PulseSelected = false;
@@ -71,7 +77,7 @@ namespace Reverbat
             PulseSelected = true;
             EchoSelected = false;
             level.darkness.Emit();
-            level.ShowHint("Echo Pulse reveals the room. Move to the right side, then echo the plank's right half.", 6);
+            level.ShowHint("Echo Pulse reveals the room. Move onto the plank's right end to tilt it to -45° first.", 6);
         }
 
         public void StopMoving() { IsMoving = false; waypoints.Clear(); }

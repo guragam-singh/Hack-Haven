@@ -5,6 +5,8 @@ namespace Reverbat
 {
     public sealed class Level01Manager : MonoBehaviour
     {
+        public event System.Action<string> DialogueTriggered;
+        public DialogueManager dialogue { get; private set; }
         public BatController2D bat;
         public SpriteRenderer coffin;
         public SpriteRenderer bell;
@@ -31,11 +33,18 @@ namespace Reverbat
             tiltable.level = this;
             darkness = gameObject.AddComponent<EchoPulse2D>();
             darkness.Initialize(this);
+            dialogue = gameObject.AddComponent<DialogueManager>();
+            dialogue.Initialize(this);
         }
+
+        private void Start() { NotifyDialogue(DialogueIds.LevelBegin); }
+        public void NotifyDialogue(string triggerId) { DialogueTriggered?.Invoke(triggerId); }
 
         private void Update()
         {
             if (mechanism.enabled && Time.time >= revealUntil) mechanism.enabled = false;
+            if (Vector2.Distance(bat.transform.position, reflector.GetComponent<Collider2D>().ClosestPoint(bat.transform.position)) <= 1.5f)
+                NotifyDialogue(DialogueIds.Reflector);
         }
 
         public void ShowHint(string message, float duration = 4)
@@ -50,7 +59,7 @@ namespace Reverbat
             MechanismDiscovered = true;
             mechanism.enabled = true;
             revealUntil = Time.time + 3;
-            if (!CoffinOpen) ShowHint("The bell controls the lock. From the right side of the room, echo the plank's right half.", 5);
+            if (!CoffinOpen) ShowHint("Tilt the plank's right end to -45°, then from the right echo its right half: bell → coffin.", 5);
         }
 
         public void HitBell(bool throughReflector)
@@ -67,13 +76,15 @@ namespace Reverbat
 
         public void HitCoffinByReflection()
         {
-            if (CoffinOpen) return;
+            // Check again on arrival: a changed tilt or a direct callback must never bypass progression.
+            if (CoffinOpen || !bat.echo.ValidPuzzleRoute) return;
             CoffinOpen = true;
             coffin.color = new Color(.55f, .22f, .25f);
             coffin.GetComponent<Collider2D>().enabled = false;
             artifact.SetActive(true);
             StartCoroutine(FlashBell());
             ShowHint("Coffin unlocked! Click the red artifact to fly over and collect it.", 8);
+            NotifyDialogue(DialogueIds.Coffin);
         }
 
         private IEnumerator FlashBell()
@@ -89,6 +100,8 @@ namespace Reverbat
             Complete = true;
             artifact.SetActive(false);
             hint = "Artifact Collected! Resonance Unlocked.";
+            NotifyDialogue(DialogueIds.Artifact);
+            NotifyDialogue(DialogueIds.Announcement);
             return true;
         }
 
@@ -105,7 +118,7 @@ namespace Reverbat
             GUI.matrix = Matrix4x4.Scale(new Vector3(Screen.width / 1280f, Screen.height / 720f, 1));
             GUI.Box(new Rect(0, 0, 1280, 100), GUIContent.none);
             GUI.Label(new Rect(20, 7, 1240, 34), "REVERBAT  /  LEVEL 01 — THE CRYPT                         Artifacts: " + (Complete ? "1/1" : "0/1"), title);
-            GUI.Label(new Rect(25, 42, 1230, 52), Complete || Time.time < hintUntil ? hint : "Pulse to reveal. Move right, then Echo Sight the plank's right half: plank → bell → coffin.", text);
+            GUI.Label(new Rect(25, 42, 1230, 52), Complete || Time.time < hintUntil ? hint : "Move onto the right end to tilt to -45°. Then echo the right half from the room's right side.", text);
             if (darkness.Visible(bat.GetComponent<SpriteRenderer>())) LabelWorld(bat.transform, "BAT", new Vector2(0, 28));
             if (darkness.Visible(reflector.GetComponent<SpriteRenderer>()))
             {

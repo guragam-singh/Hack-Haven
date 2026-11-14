@@ -1,0 +1,50 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 149bc7d5efce05141be27fa4cf4e1e5d, type: 3}
+  m_Name: Level01Dialogue
+  m_EditorClassIdentifier: Assembly-CSharp::Reverbat.DialogueLibrary
+  entries:
+  - triggerId: level01.begin
+    characterName: BAT DRACULA
+    text: Great. He gets the castle, the throne, and the entire kingdom... and I get wings the size of teaspoons.
+    voiceClip: {fileID: 0}
+    duration: 5
+  - triggerId: level01.first-pulse
+    characterName: BAT DRACULA
+    text: Wonderful. I've lost my body AND my eyesight. What's next, taxes?
+    voiceClip: {fileID: 0}
+    duration: 5
+  - triggerId: level01.reflector-discovered
+    characterName: BAT DRACULA
+    text: A perfectly good mirror, and not a reflection of me in sight. Typical.
+    voiceClip: {fileID: 0}
+    duration: 5
+  - triggerId: level01.reflector-tilted
+    characterName: BAT DRACULA
+    text: Behold! The terrifying power of... sitting on things.
+    voiceClip: {fileID: 0}
+    duration: 5
+  - triggerId: level01.coffin-open
+    characterName: BAT DRACULA
+    text: HA! Still the greatest mind in Transylvania. Technically half of it, but still.
+    voiceClip: {fileID: 0}
+    duration: 5
+  - triggerId: level01.artifact-collected
+    characterName: BAT DRACULA
+    text: Finally, some of my power back. Now, where's that oversized impostor?
+    voiceClip: {fileID: 0}
+    duration: 5
+  - triggerId: level01.dictator-announcement
+    characterName: DICTATOR DRACULA
+    text: Attention, citizens. Reports of a flying rodent impersonating your glorious ruler are entirely false.
+    voiceClip: {fileID: 0}
+    duration: 5

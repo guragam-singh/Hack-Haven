@@ -8,10 +8,13 @@ namespace Reverbat
     {
         public Level01Manager level;
         public float Angle => Mathf.DeltaAngle(0, transform.eulerAngles.z);
-        public bool CorrectAngle => Mathf.Abs(Mathf.DeltaAngle(Angle, -45)) <= 10;
+        public bool CorrectAngle => Mathf.Abs(Mathf.DeltaAngle(Angle, -45)) <= 10.001f;
+        public bool HasBeenTiltedToCorrectAngle { get; private set; }
         private int landingSide;
         private bool landed;
         public Vector2 LaunchPoint => new Vector2(-1.5f, 3.214286f);
+
+        private void Awake() { transform.rotation = Quaternion.identity; }
 
         public Vector2 EndPosition(int side)
         {
@@ -23,6 +26,7 @@ namespace Reverbat
         {
             Vector2 local = transform.InverseTransformPoint(point);
             if (Mathf.Abs(local.x) < .25f || Mathf.Abs(local.x) > .75f || Mathf.Abs(local.y) > 5) return false;
+            level.NotifyDialogue(DialogueIds.Reflector);
             landingSide = local.x > 0 ? 1 : -1;
             landed = false;
             level.bat.MoveTo(EndPosition(landingSide), false);
@@ -41,6 +45,11 @@ namespace Reverbat
             float target = landingSide > 0 ? -45 : 45;
             float angle = Mathf.MoveTowardsAngle(Angle, target, 90 * Time.deltaTime);
             transform.rotation = Quaternion.Euler(0, 0, angle);
+            if (CorrectAngle)
+            {
+                if (!HasBeenTiltedToCorrectAngle) level.NotifyDialogue(DialogueIds.Tilt);
+                HasBeenTiltedToCorrectAngle = true;
+            }
             level.bat.transform.position = EndPosition(landingSide);
             Physics2D.SyncTransforms();
         }
