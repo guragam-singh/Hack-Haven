@@ -17,5 +17,8 @@ EditorBuildSettings:
   - enabled: 1
     path: Assets/Scenes/Level02_SleepingGuard.unity
     guid: fce7166c2945cbf499eab406a977e81f
+  - enabled: 1
+    path: Assets/Scenes/BossFight_3D.unity
+    guid: 8e3aadbbd9b4e354ea4b54e8a55c9d3a
   m_configObjects:
     com.unity.input.settings.actions: {fileID: -944628639613478452, guid: 2bcd2660ca9b64942af0de543d8d7100, type: 3}
