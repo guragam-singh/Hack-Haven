@@ -9,8 +9,8 @@ namespace Reverbat.Boss
         private Font display,body;
         private GUIStyle label;
         private float batFill, bossFill;
-        private static readonly Color Ink=new Color(.046f,.030f,.080f,.95f), Paper=new Color(1,.95f,.86f),
-            Gold=new Color(.88f,.68f,.40f), Cyan=new Color(.32f,.88f,1), Rose=new Color(1,.36f,.53f), Lilac=new Color(.78f,.70f,.90f);
+        private static readonly Color Ink=new Color(.093f,.088f,.099f,.96f), Paper=new Color(.83f,.81f,.76f),
+            Gold=new Color(.69f,.60f,.46f), Cyan=new Color(.51f,.69f,.72f), Rose=new Color(.73f,.51f,.55f), Lilac=new Color(.66f,.63f,.68f);
         private float Scale => Mathf.Min(Screen.width/1280f, Screen.height/720f);
         private float Width => Screen.width/Scale;
         private float Height => Screen.height/Scale;
@@ -22,6 +22,7 @@ namespace Reverbat.Boss
 
         private void Awake()
         {
+            CreateGrain();
             display=Font.CreateDynamicFontFromOSFont(new[]{"Georgia","Times New Roman","Liberation Serif"},32);
             body=Font.CreateDynamicFontFromOSFont(new[]{"Segoe UI","Arial","Liberation Sans"},22);
         }
@@ -43,7 +44,37 @@ namespace Reverbat.Boss
             else if(fight.State==BattleState.PlayerChooseDefense) fight.ChooseDefense(left?Defense.Brace:Defense.Evade);
         }
 
-        private static void Fill(Rect r,Color c)
+        private Texture2D grain;
+
+        private void CreateGrain()
+        {
+            const int side = 64;
+            var random = new System.Random(304);
+            var pixels = new Color32[side * side];
+            for (int i = 0; i < pixels.Length; i++)
+            {
+                byte shade = random.Next(2) == 0 ? (byte)0 : (byte)215;
+                pixels[i] = new Color32(shade, shade, shade, (byte)random.Next(5, 38));
+            }
+            grain = new Texture2D(side, side, TextureFormat.RGBA32, false);
+            grain.wrapMode = TextureWrapMode.Repeat;
+            grain.filterMode = FilterMode.Point;
+            grain.SetPixels32(pixels);
+            grain.Apply(false, true);
+        }
+
+        private void OnDestroy() { if (grain) Destroy(grain); }
+
+        private void Fill(Rect r,Color c)
+        {
+            Solid(r,c);
+            if (!grain || r.width < 6 || r.height < 4) return;
+            GUI.color = new Color(1, 1, 1, c.a);
+            GUI.DrawTextureWithTexCoords(r, grain, new Rect(r.x/96f, r.y/96f, r.width/96f, r.height/96f));
+            GUI.color = Color.white;
+        }
+
+        private static void Solid(Rect r,Color c)
         {
             GUI.color=c; GUI.DrawTexture(r,Texture2D.whiteTexture); GUI.color=Color.white;
         }
@@ -99,8 +130,8 @@ namespace Reverbat.Boss
                     Caption(fight.Incoming==Counter.BatSwarm?"Bat Swarm incoming":"Blood Siphon incoming");
                 else if(!string.IsNullOrEmpty(fight.Feedback)) Caption(fight.Feedback,fight.GoodFeedback?Cyan:Rose);
             }
-            if(fight.stage.Flash>0) Fill(new Rect(0,0,w,h),new Color(1,.85f,.73f,fight.stage.Flash*.24f));
-            if(fight.stage.Black>0) Fill(new Rect(0,0,w,h),new Color(0,0,0,fight.stage.Black));
+            if(fight.stage.Flash>0) Solid(new Rect(0,0,w,h),new Color(1,.85f,.73f,fight.stage.Flash*.24f));
+            if(fight.stage.Black>0) Solid(new Rect(0,0,w,h),new Color(0,0,0,fight.stage.Black));
             GUI.matrix=matrix;GUI.color=color;
         }
         private void Health(Rect r,string name,int hp,int max,float fill,Color accent,bool right)
@@ -121,25 +152,25 @@ namespace Reverbat.Boss
         private bool Hover(Rect r) => Mouse.current!=null && r.Contains(GuiPoint(Mouse.current.position.ReadValue()));
         private void SmallButton(Rect r,string name)
         {
-            Fill(r,Hover(r)?new Color(.28f,.16f,.31f):Ink);
+            Fill(r,Hover(r)?new Color(.23f,.21f,.23f):Ink);
             Fill(new Rect(r.x,r.yMax-2,r.width,2),Gold);Text(r,name,18,Paper);
         }
         private void Choice(Rect r,string type,string name,Color accent,int icon)
         {
-            Fill(r,Hover(r)?new Color(.23f,.15f,.27f,.98f):Ink);
+            Fill(r,Hover(r)?new Color(.23f,.21f,.23f,.98f):Ink);
             Fill(new Rect(r.x,r.y,r.width,2),accent);
             Fill(new Rect(r.x+58,r.y+14,1,r.height-28),new Color(.47f,.37f,.50f,.7f));
             Icon(new Vector2(r.x+30,r.center.y),accent,icon);
             Text(new Rect(r.x+75,r.y+8,r.width-81,21),type,12,accent,TextAnchor.MiddleLeft,false,true);
             Text(new Rect(r.x+75,r.y+25,r.width-80,35),name,22,Paper,TextAnchor.MiddleLeft,true);
         }
-        private static void Line(Vector2 a,Vector2 b,float thickness,Color color)
+        private void Line(Vector2 a,Vector2 b,float thickness,Color color)
         {
             var previous=GUI.matrix; Vector2 v=b-a;
             GUIUtility.RotateAroundPivot(Mathf.Atan2(v.y,v.x)*Mathf.Rad2Deg,a);
             Fill(new Rect(a.x,a.y-thickness*.5f,v.magnitude,thickness),color);GUI.matrix=previous;
         }
-        private static void Icon(Vector2 p,Color c,int n)
+        private void Icon(Vector2 p,Color c,int n)
         {
             if(n==1 || n==3)
             {
@@ -171,7 +202,7 @@ namespace Reverbat.Boss
                 Text(new Rect(r.x,r.y+9,r.width,27),instruction,16,Paper,TextAnchor.MiddleCenter,false,true);
                 Rect track=new Rect(r.x+30,r.y+54,r.width-60,21);
                 Fill(track,new Color(.20f,.18f,.28f));
-                Fill(new Rect(track.x+track.width*(fight.zoneCenter-fight.zoneWidth/2),track.y,track.width*fight.zoneWidth,track.height),new Color(.12f,.59f,.94f));
+                Fill(new Rect(track.x+track.width*(fight.zoneCenter-fight.zoneWidth/2),track.y,track.width*fight.zoneWidth,track.height),new Color(.33f,.53f,.69f));
                 float x=track.x+track.width*fight.Indicator;
                 Fill(new Rect(x-2,track.y-6,4,track.height+12),Paper);
             }

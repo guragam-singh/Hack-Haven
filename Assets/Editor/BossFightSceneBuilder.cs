@@ -64,6 +64,7 @@ public static class BossFightSceneBuilder
         RenderSettings.fogColor=new Color(.105f,.06f,.155f);RenderSettings.fogStartDistance=13;RenderSettings.fogEndDistance=32;
         MakeLighting();
         DressCourt();
+        StyleBossRoom(fight);
         EditorSceneManager.MarkSceneDirty(scene);
         if(!EditorSceneManager.SaveScene(scene,Path))throw new Exception("Could not save boss scene.");
         // Explicit scene registration allows standalone editor/build testing. Story scenes never load it.
@@ -285,6 +286,61 @@ public static class BossFightSceneBuilder
             EditorUtility.SetDirty(profile);
         }
         volume.sharedProfile=profile;
+    }
+    internal static void StyleBossRoom(BossFightController fight)
+    {
+        var chamber = fight.transform.Find("Throne chamber");
+        var volume = chamber.GetComponentInChildren<Volume>();
+        var profile = volume.sharedProfile;
+        profile.TryGet(out ColorAdjustments grade);
+        grade.postExposure.Override(-.88f);
+        grade.contrast.Override(-24f);
+        grade.saturation.Override(-67f);
+        profile.TryGet(out Bloom bloom);
+        bloom.intensity.Override(0f);
+        if (!profile.TryGet(out FilmGrain grain))
+        {
+            grain = profile.Add<FilmGrain>(true);
+            AssetDatabase.AddObjectToAsset(grain, profile);
+        }
+        grain.type.Override(FilmGrainLookup.Medium4);
+        grain.intensity.Override(.86f);
+        grain.response.Override(.32f);
+        foreach (var component in profile.components) EditorUtility.SetDirty(component);
+        EditorUtility.SetDirty(profile);
+        var cameraData = fight.stage.cameraRig.lens.GetUniversalAdditionalCameraData();
+        cameraData.antialiasing = AntialiasingMode.None;
+        EditorUtility.SetDirty(cameraData);
+
+        var prism = RoughColumnMesh();
+        foreach (var filter in chamber.GetComponentsInChildren<MeshFilter>())
+            if (filter.sharedMesh && filter.sharedMesh.name == "Cylinder")
+                filter.sharedMesh = prism;
+        foreach (var material in chamber.GetComponentsInChildren<MeshRenderer>().SelectMany(r => r.sharedMaterials).Distinct())
+        {
+            if (!material || !AssetDatabase.GetAssetPath(material).StartsWith(Art+"Materials/")) continue;
+            if (material.HasProperty("_Smoothness")) material.SetFloat("_Smoothness", .10f);
+            if (material.HasProperty("_Metallic")) material.SetFloat("_Metallic", .06f);
+            EditorUtility.SetDirty(material);
+        }
+        EditorSceneManager.MarkSceneDirty(fight.gameObject.scene);
+    }
+
+    private static Mesh RoughColumnMesh()
+    {
+        var vertices = new List<Vector3>();
+        var triangles = new List<int>();
+        for (int i = 0; i < 8; i++)
+        {
+            float a = i * Mathf.PI / 4, b = (i + 1) * Mathf.PI / 4;
+            Vector3 p = new Vector3(Mathf.Cos(a), 0, Mathf.Sin(a)) * .5f;
+            Vector3 q = new Vector3(Mathf.Cos(b), 0, Mathf.Sin(b)) * .5f;
+            int n = vertices.Count;
+            vertices.AddRange(new[]{p-Vector3.up,p+Vector3.up,q+Vector3.up,q-Vector3.up,
+                Vector3.up,q+Vector3.up,p+Vector3.up,Vector3.down,p-Vector3.up,q-Vector3.up});
+            triangles.AddRange(new[]{n,n+1,n+2,n,n+2,n+3,n+4,n+5,n+6,n+7,n+8,n+9});
+        }
+        return MeshAsset("Octagonal stone", vertices.ToArray(), triangles.ToArray());
     }
     private static void Lamp(string name,Vector3 p,Color color,float intensity,float range)
     {
