@@ -214,7 +214,8 @@ MonoBehaviour:
   snoring: {fileID: 1070404465}
   effects: {fileID: 2008449789}
   whistle: {fileID: 8300000, guid: 430b27d97bd1db749a43a48baca2bbd6, type: 3}
-  snoreVolume: 0.32
+  wakeThud: {fileID: 8300000, guid: b31b95e89cdd4a58a46847357ca556f4, type: 3}
+  snoreVolume: 0.64
   loudSnore: 0.6
   startledHold: 0.4
   shieldFade: 0.5
@@ -1271,7 +1272,7 @@ AudioSource:
   m_audioClip: {fileID: 0}
   m_Resource: {fileID: 8300000, guid: f3271bdf7473cd2489a7be8de8cb051f, type: 3}
   m_PlayOnAwake: 0
-  m_Volume: 0.32
+  m_Volume: 0.64
   m_Pitch: 1
   Loop: 1
   Mute: 0

@@ -121,7 +121,7 @@ public static class SleepingGuardValidation
         Check(l.State==GuardPuzzleState.AwaitingEchoPulse && bat.SelectedAbility==-1,"Starts awaiting an actual pulse, no selected ability");
         Check(bat.IsAbilityUnlocked(2) && !bat.IsAbilityUnlocked(3),"Resonance available and Mimicry locked");
         Check(!l.shieldTarget.enabled && l.shield.color.a==0 && !l.exitTarget.enabled && !l.exitArrow.enabled,"Hidden shield and exit have disabled hitboxes");
-        Check(l.snoring.loop && l.snoring.isPlaying && l.snoring.volume==l.snoreVolume && l.snoring!=l.effects && l.snoring!=l.voice.VoiceSource,"Snoring loops on an independent source at baseline");
+        Check(l.snoring.loop && l.snoring.isPlaying && Mathf.Approximately(l.snoring.volume,.64f) && l.snoring.volume==l.snoreVolume && l.snoring!=l.effects && l.snoring!=l.voice.VoiceSource,"Snoring loops on an independent source at baseline");
         Check(l.openWindow.enabled && l.rays.enabled && !l.closedWindow.enabled && l.female.enabled,"Window open, rays and female bat visible");
         Check(l.revealedEnvironment[0].enabled==false && l.snoreLetters.enabled,"Room dark with snore artwork");
         Capture("Start");
@@ -155,8 +155,8 @@ public static class SleepingGuardValidation
         yield return new WaitForSeconds(1.4f);
         Check(l.pulse.RevealAmountAt(l.female.transform.position)>.8f,"Room revealed at far window");
         Capture("Reveal");
-        yield return Until(()=>l.pulse.RevealAmountAt(l.female.transform.position)<.02f,8);
-        Check(l.pulse.RevealAmountAt(l.female.transform.position)<.02f,"Room fades into darkness again");
+        yield return Until(()=>l.pulse.ActivePulseCount==0,15);
+        Check(l.pulse.ActivePulseCount==0 && l.pulse.RevealAmountAt(l.female.transform.position)==1 && l.revealedEnvironment[0].enabled && Shader.GetGlobalFloat("_ReverbatMaskEnabled")==0,"Hallway stays fully bright after the first pulse expires");
         l.pulse.Emit();
         Check(l.State==GuardPuzzleState.AwaitingGuardResonance && voices==(testVoice?1:0),"Additional pulses do not replay dialogue or reset progression");
         Keys(Key.Digit3); yield return null; Keys(); yield return null;
@@ -164,8 +164,9 @@ public static class SleepingGuardValidation
         Check(l.State==GuardPuzzleState.AwaitingGuardResonance && l.resonanceWaves.enabled,"Misaimed Resonance shows directional waves and fails");
         yield return new WaitForSeconds(.5f);
         yield return Click(bat,l.guard.transform.position+Vector3.left*.45f);
-        Check(l.State==GuardPuzzleState.GuardWaking && Mathf.Approximately(l.snoring.volume,2*l.snoreVolume) && l.snoring.isPlaying,"Forgiving guard hit starts wake and doubles snoring");
+        Check(l.State==GuardPuzzleState.GuardWaking && Mathf.Approximately(l.snoring.volume,Mathf.Min(1,2*l.snoreVolume)) && l.snoring.isPlaying,"Forgiving guard hit starts wake and raises the snore to its peak");
         yield return Until(()=>l.alert.enabled);
+        Check(l.wakeThud!=null && l.wakeThud.name=="Guard_Wake_Thud" && l.effects.isPlaying,"Wake-up thud plays on the startled frame");
         Check(l.guard.sprite==l.startledGuard && !l.snoring.isPlaying && l.alert.enabled && !l.shieldTarget.enabled,"Startled swap and alert follow snoring stop");
         yield return Until(()=>l.shield.color.a>.05f);
         Check(l.shield.color.a<1 && !l.shieldTarget.enabled,"Shield collider stays off during fade");

@@ -29,6 +29,17 @@ namespace Reverbat
         public event System.Action Emitted;
         private float readyAt;
         private bool ownsMaterial;
+        private float permanentRevealAt = float.PositiveInfinity;
+        private bool roomStaysLit;
+        // Called by rooms that retain the first discovery after the expanding wave.
+        public void KeepCurrentReveal()
+        {
+            if (pulses.Count == 0 || roomStaysLit) return;
+            var wave = pulses[pulses.Count - 1];
+            float crossingTime = MaximumRadius / wave.speed + wave.feather / wave.speed;
+            wave.hold = Mathf.Max(wave.hold, crossingTime);
+            permanentRevealAt = wave.started + crossingTime;
+        }
         public float CooldownRemaining => Mathf.Max(0, readyAt - Time.time);
         public int ActivePulseCount => pulses.Count;
         public float CurrentRadius => pulses.Count == 0 ? 0 : Mathf.Min(MaximumRadius,(Time.time-pulses[pulses.Count-1].started)*pulses[pulses.Count-1].speed);
@@ -98,6 +109,7 @@ namespace Reverbat
 
         public float RevealAmountAt(Vector2 point)
         {
+            if (roomStaysLit) return 1;
             float value=0;
             foreach(var pulse in pulses)
             {
@@ -160,7 +172,12 @@ namespace Reverbat
                 }
             }
             Publish();
-            if(pulses.Count==0) foreach(var sprite in worldSprites) sprite.enabled=false;
+            if (!roomStaysLit && Time.time >= permanentRevealAt)
+            {
+                roomStaysLit = true;
+                Shader.SetGlobalFloat("_ReverbatMaskEnabled",0);
+            }
+            if(pulses.Count==0 && !roomStaysLit) foreach(var sprite in worldSprites) sprite.enabled=false;
         }
         private void Publish()
         {

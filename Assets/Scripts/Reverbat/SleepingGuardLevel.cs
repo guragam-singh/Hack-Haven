@@ -46,8 +46,8 @@ namespace Reverbat
         public Collider2D exitTarget;
         [Header("Audio")]
         public AudioSource snoring, effects;
-        public AudioClip whistle;
-        [Range(0,.5f)] public float snoreVolume = .32f;
+        public AudioClip whistle, wakeThud;
+        [Range(0,1)] public float snoreVolume = .64f;
         [Header("Sequence durations (seconds)")]
         [Min(.01f)] public float loudSnore = .6f, startledHold = .4f, shieldFade = .5f,
             heartHold = .7f, flight = 1f, curtainClose = .6f, femaleFade = .5f, exitTravel = .8f;
@@ -125,6 +125,7 @@ namespace Reverbat
         private void OnPulse()
         {
             if (State != GuardPuzzleState.AwaitingEchoPulse) return;
+            pulse.KeepCurrentReveal();
             State = GuardPuzzleState.BatDialogue;
             if (voice.Enqueue(new DialogueEntry { triggerId = "level02.first-pulse", voiceClip = level2AfterFirstPulseDialogue }))
                 StartCoroutine(WaitForVoice());
@@ -169,11 +170,12 @@ namespace Reverbat
 
         private IEnumerator Wake()
         {
-            snoring.volume = snoreVolume * 2;
+            snoring.volume = Mathf.Min(1f, snoreVolume * 2);
             yield return new WaitForSeconds(loudSnore);
             snoring.Stop();
             snoreLetters.enabled = false;
             Swap(guard, startledGuard);
+            effects.PlayOneShot(wakeThud);
             alert.enabled = true;
             yield return new WaitForSeconds(startledHold);
             alert.enabled = false;
@@ -286,6 +288,8 @@ namespace Reverbat
             effects.Stop();
             voice.VoiceSource.Stop();
             State = GuardPuzzleState.Completed;
+            yield return null;
+            UnityEngine.SceneManagement.SceneManager.LoadSceneAsync("BossFight_3D");
         }
 
         private static void SetAlpha(SpriteRenderer renderer, float value)

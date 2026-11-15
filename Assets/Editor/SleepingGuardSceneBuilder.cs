@@ -158,6 +158,7 @@ public static class SleepingGuardSceneBuilder
         level.snoring.playOnAwake = false;
         level.effects = Node("Reaction sounds",1534,372).gameObject.AddComponent<AudioSource>();
         level.effects.playOnAwake = false;
+        level.wakeThud = AssetDatabase.LoadAssetAtPath<AudioClip>(Audio+"Guard_Wake_Thud.wav");
         level.whistle = AssetDatabase.LoadAssetAtPath<AudioClip>(Audio+"FemaleBat_Whistle.wav");
         level.sightIcon = icons.echoSightIcon;
         level.pulseIcon = icons.echoPulseIcon;
