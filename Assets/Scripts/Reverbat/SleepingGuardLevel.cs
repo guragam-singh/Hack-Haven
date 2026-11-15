@@ -33,7 +33,7 @@ namespace Reverbat
         public EchoPulse2D pulse;
         public SpriteRenderer[] revealedEnvironment;
         public DialogueManager voice;
-        public AudioClip level2AfterFirstPulseDialogue;
+        public AudioClip level2AfterFirstPulseDialogue, exitDialogue;
         [Header("Guard and reflection")]
         public SpriteRenderer guard, shield, snoreLetters, alert, impact, resonanceWaves;
         public Sprite startledGuard;
@@ -264,6 +264,7 @@ namespace Reverbat
             if (State != GuardPuzzleState.ExitAvailable || Exiting || !exitTarget.OverlapPoint(point)) return false;
             Exiting = true;
             exitArrow.enabled = exitTarget.enabled = false;
+            voice.Enqueue(new DialogueEntry { triggerId = "level02.exit", voiceClip = exitDialogue });
             StartCoroutine(Leave());
             return true;
         }
@@ -286,7 +287,7 @@ namespace Reverbat
             bat.GetComponent<SpriteRenderer>().enabled = false;
             snoring.Stop();
             effects.Stop();
-            voice.VoiceSource.Stop();
+            while (voice.IsShowing) yield return null;
             State = GuardPuzzleState.Completed;
             yield return null;
             UnityEngine.SceneManagement.SceneManager.LoadSceneAsync("BossFight_3D");

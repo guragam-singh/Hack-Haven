@@ -55,6 +55,36 @@ namespace Reverbat.Boss
         private float started,deadline,window,chargeStart,feedbackUntil;
         private int openedFrame,repeatCount;
         private bool skipIntro;
+        public bool ShowingFinale { get; private set; }
+        public Texture2D FinaleFrame { get; private set; }
+        private AudioSource finaleVoice;
+
+        private IEnumerator PlayFinale()
+        {
+            var frames = new Texture2D[7];
+            for (int i = 0; i < frames.Length; i++)
+                frames[i] = Resources.Load<Texture2D>("Finale/Frame" + i);
+            var animationLine = Resources.Load<AudioClip>("Finale/3");
+            var closingLine = Resources.Load<AudioClip>("Finale/4");
+            if (!finaleVoice)
+            {
+                finaleVoice = gameObject.AddComponent<AudioSource>();
+                finaleVoice.playOnAwake = false;
+            }
+            ShowingFinale = true;
+            finaleVoice.clip = animationLine;
+            finaleVoice.Play();
+            foreach (var frame in frames)
+            {
+                FinaleFrame = frame;
+                yield return new WaitForSecondsRealtime(3f);
+            }
+            while (finaleVoice.isPlaying) yield return null;
+            FinaleFrame = null;
+            finaleVoice.clip = closingLine;
+            finaleVoice.Play();
+            while (finaleVoice.isPlaying) yield return null;
+        }
         private void Start()
         {
             AudioListener.volume=Mathf.Clamp01(PlayerPrefs.GetFloat(MainMenu.VolumeKey,1));
@@ -64,6 +94,8 @@ namespace Reverbat.Boss
         private void BeginFight()
         {
             StopAllCoroutines();
+            ShowingFinale = false;
+            FinaleFrame = null;
             stage.ResetStage();
             BatHP=batMaxHP; DictatorHP=dictatorMaxHP; Turn=1;
             PlayerHits=EnemyHits=repeatCount=0;
@@ -229,6 +261,7 @@ namespace Reverbat.Boss
         {
             Prompt=Challenge.None; Feedback="";
             yield return stage.Ending(State==BattleState.Victory);
+            if (State == BattleState.Victory) yield return PlayFinale();
             ResultReady=true;
         }
     }

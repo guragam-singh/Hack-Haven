@@ -149,7 +149,7 @@ public static class SleepingGuardValidation
         Check(l.pulse.ActivePulseCount==1 && l.pulse.CooldownRemaining>0,"Click emits shared expanding pulse and starts cooldown (count "+l.pulse.ActivePulseCount+", remaining "+l.pulse.CooldownRemaining+")");
         Check(!l.pulse.Emit(),"Repeated emission rejected during cooldown");
         Check(l.pulse.RevealAmountAt(start)>l.pulse.RevealAmountAt(l.female.transform.position),"Reveal begins at player before reaching far side");
-        if (testVoice) Check(l.State==GuardPuzzleState.BatDialogue && voices==1 && l.voice.VoiceSource.isPlaying,"Assigned test clip plays on voice queue");
+        if (l.level2AfterFirstPulseDialogue) Check(l.State==GuardPuzzleState.BatDialogue && voices==1 && l.voice.VoiceSource.isPlaying,"Assigned test clip plays on voice queue");
         else Check(voices==0 && l.State==GuardPuzzleState.AwaitingGuardResonance,"Empty voice hook advances immediately");
         yield return Until(()=>l.State==GuardPuzzleState.AwaitingGuardResonance);
         yield return new WaitForSeconds(1.4f);
@@ -158,7 +158,7 @@ public static class SleepingGuardValidation
         yield return Until(()=>l.pulse.ActivePulseCount==0,15);
         Check(l.pulse.ActivePulseCount==0 && l.pulse.RevealAmountAt(l.female.transform.position)==1 && l.revealedEnvironment[0].enabled && Shader.GetGlobalFloat("_ReverbatMaskEnabled")==0,"Hallway stays fully bright after the first pulse expires");
         l.pulse.Emit();
-        Check(l.State==GuardPuzzleState.AwaitingGuardResonance && voices==(testVoice?1:0),"Additional pulses do not replay dialogue or reset progression");
+        Check(l.State==GuardPuzzleState.AwaitingGuardResonance && voices==(l.level2AfterFirstPulseDialogue?1:0),"Additional pulses do not replay dialogue or reset progression");
         Keys(Key.Digit3); yield return null; Keys(); yield return null;
         yield return Click(bat,l.openWindow.transform.position);
         Check(l.State==GuardPuzzleState.AwaitingGuardResonance && l.resonanceWaves.enabled,"Misaimed Resonance shows directional waves and fails");

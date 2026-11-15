@@ -124,10 +124,16 @@ namespace Reverbat
 
             if (Application.CanStreamedLevelBeLoaded(SleepingGuardLevel.SceneName))
             {
-                SleepingGuardLevel.EnterFromLevelOne(dialogue);
-                UnityEngine.SceneManagement.SceneManager.LoadScene(SleepingGuardLevel.SceneName);
+                StartCoroutine(LeaveAfterArtifactVoice());
             }
             return true;
+        }
+
+        private IEnumerator LeaveAfterArtifactVoice()
+        {
+            while (dialogue.IsShowing) yield return null;
+            SleepingGuardLevel.EnterFromLevelOne(dialogue);
+            UnityEngine.SceneManagement.SceneManager.LoadSceneAsync(SleepingGuardLevel.SceneName);
         }
 
         private void OnGUI()

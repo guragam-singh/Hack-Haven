@@ -223,7 +223,7 @@ public static class BossFightValidation
                     Check(!stage.fx.BeamVisible && stage.fx.VisibleSwarm==0 && stage.bat.transform.position==batHome && stage.dictator.transform.position==bossHome,"FX clear and actor anchors restored between turns");
                 }
             }
-            yield return Until(()=>f.ResultReady,"terminal tableau");
+            yield return Until(()=>f.ResultReady,"terminal tableau",36);
             bool win=run!=1;
             Check(f.State==(win?BattleState.Victory:BattleState.Defeat),"Encounter reaches "+(win?"victory":"defeat"));
             Check((win?f.DictatorHP:f.BatHP)==0 && f.Prompt==Challenge.None && !f.ChooseAttack(Attack.EchoMirror) && !f.ChooseDefense(Defense.Brace),"Zero HP clamps, QTE closes and terminal state rejects combat input");

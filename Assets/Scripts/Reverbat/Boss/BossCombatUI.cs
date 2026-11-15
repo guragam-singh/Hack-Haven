@@ -93,7 +93,15 @@ namespace Reverbat.Boss
             var matrix=GUI.matrix;var color=GUI.color;
             GUI.matrix=Matrix4x4.Scale(new Vector3(Scale,Scale,1)); GUI.color=Color.white;
             float w=Width,h=Height;
-            if(fight.State==BattleState.BattleIntro)
+            if (fight.ShowingFinale)
+            {
+                Solid(new Rect(0, 0, w, h), Color.black);
+                if (fight.FinaleFrame)
+                    GUI.DrawTexture(new Rect(0, 0, w, h), fight.FinaleFrame, ScaleMode.ScaleToFit);
+                else if (fight.ResultReady)
+                    SmallButton(ReplayButton, "Replay");
+            }
+            else if(fight.State==BattleState.BattleIntro)
             {
                 Fill(new Rect(0,0,w,44),Ink); Fill(new Rect(0,h-57,w,57),Ink);
                 Text(new Rect(w*.5f-230,h-130,460,28),"R E V E R B A T",15,Gold);

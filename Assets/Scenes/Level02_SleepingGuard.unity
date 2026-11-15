@@ -187,7 +187,8 @@ MonoBehaviour:
   - {fileID: 1189728954}
   - {fileID: 1178202469}
   voice: {fileID: 37751070}
-  level2AfterFirstPulseDialogue: {fileID: 0}
+  level2AfterFirstPulseDialogue: {fileID: 8300000, guid: 353803cd0e7b4ed1a05a86f82078d29e, type: 3}
+  exitDialogue: {fileID: 8300000, guid: 3b20fd0af5f74c48a691b46ebbf21f95, type: 3}
   guard: {fileID: 413016984}
   shield: {fileID: 796031422}
   snoreLetters: {fileID: 1652386013}
